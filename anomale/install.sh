@@ -15,6 +15,7 @@ to install...
       ┏┓┓┏┏┓┓ ┓ 
       ┗┓┣┫┣ ┃ ┃ 
       ┗┛┛┗┗┛┗┛┗┛
+ With Jor's Dots!
 
 Nice...
 EOF
@@ -78,3 +79,7 @@ done
 
 clear
 echo "Starting the installation..."
+echo "This script requires sudo for various commands during setup."
+sudo -v 
+
+yay -S --needed - < "$THE_STUFF/aurlist.txt"
