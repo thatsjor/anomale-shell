@@ -1,0 +1,409 @@
+#!/usr/bin/env python3
+"""
+MangoRecorder - Video recording tool for MangoWC
+
+Records a video of the active monitor for a specified duration,
+then allows extracting a cropped area or keeping the full video.
+"""
+
+import os
+import sys
+
+# Fix gtk4-layer-shell linking order by setting LD_PRELOAD and relaunching
+LAYER_SHELL_LIB = "/usr/lib/libgtk4-layer-shell.so"
+if os.path.exists(LAYER_SHELL_LIB) and LAYER_SHELL_LIB not in os.environ.get('LD_PRELOAD', ''):
+    os.environ['LD_PRELOAD'] = LAYER_SHELL_LIB
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+# Force Wayland backend for GTK4
+os.environ['GDK_BACKEND'] = 'wayland'
+
+import gi
+import subprocess
+import tempfile
+import time
+import shutil
+from pathlib import Path
+from datetime import datetime
+
+gi.require_version('Gtk', '4.0')
+gi.require_version('Gdk', '4.0')
+gi.require_version('Gtk4LayerShell', '1.0')
+
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Pango, PangoCairo, Gtk4LayerShell as LayerShell
+
+
+def get_active_monitor_name() -> str:
+    """Get the active/selected monitor name using mmsg from MangoWC."""
+    try:
+        result = subprocess.run(['mmsg', '-g', '-o'], capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            for line in result.stdout.strip().split('\n'):
+                parts = line.split()
+                # Format: "OUTPUT_NAME selmon 0/1"
+                if len(parts) >= 3 and parts[1] == 'selmon' and parts[2] == '1':
+                    return parts[0]
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # Fallback: try wlr-randr and return first output
+    try:
+        result = subprocess.run(['wlr-randr'], capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if line and not line.startswith(' ') and not line.startswith('\t'):
+                    return line.split()[0]
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    return None
+
+
+def record_monitor(output: str, duration: int) -> str:
+    """Record the specified monitor for duration seconds. Returns path to temp mp4 file."""
+    fd, path = tempfile.mkstemp(suffix=".mp4")
+    os.close(fd)
+    # Remove the file so wf-recorder can create it fresh without prompt
+    os.remove(path)
+    
+    # Using wf-recorder
+    cmd = ["wf-recorder", "-o", output, "-f", path]
+    
+    # We run it for the duration then kill it? 
+    # Or rely on timeout. wf-recorder doesn't have a duration flag natively usually, 
+    # but we can use 'timeout' command or terminate it from python.
+    # Actually, let's use subprocess and kill it after duration.
+    
+    print(f"Recording {output} for {duration} seconds...", file=sys.stderr)
+    # Capture stderr to debug failures
+    proc = subprocess.Popen(cmd, stdout=subprocess.DEVNULL, stderr=subprocess.PIPE, text=True)
+    
+    try:
+        time.sleep(duration)
+    finally:
+        # Send SIGINT (CTRL+C) to allow wf-recorder to finalize the file
+        proc.send_signal(subprocess.signal.SIGINT)
+        try:
+            _, stderr_output = proc.communicate(timeout=2)
+        except subprocess.TimeoutExpired:
+            proc.kill()
+            _, stderr_output = proc.communicate()
+            
+    # Verify file exists and has size
+    if not os.path.exists(path) or os.path.getsize(path) == 0:
+        print(f"wf-recorder failed. Error output:\n{stderr_output}", file=sys.stderr)
+        raise RuntimeError("Recording failed: Output file is missing or empty")
+            
+    return path
+
+
+def extract_first_frame(video_path: str) -> str:
+    """Extract the first frame of the video to a temp PNG file."""
+    fd, img_path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    
+    # ffmpeg -i input.mp4 -vframes 1 -f image2 output.png
+    cmd = ["ffmpeg", "-y", "-i", video_path, "-vframes", "1", "-f", "image2", img_path]
+    subprocess.run(cmd, capture_output=True, check=True)
+    
+    return img_path
+
+
+def crop_video(source_path: str, x: int, y: int, w: int, h: int) -> str:
+    """Crop video using ffmpeg and return path to new temp file."""
+    fd, out_path = tempfile.mkstemp(suffix=".mp4")
+    os.close(fd)
+    
+    # ffmpeg -i in.mp4 -vf "crop=w:h:x:y" out.mp4
+    # Re-encoding is necessary for cropping
+    cmd = [
+        "ffmpeg", "-y", "-i", source_path,
+        "-vf", f"crop={w}:{h}:{x}:{y}",
+        "-c:a", "copy", # Copy audio if any (wf-recorder might capture audio depending on defaults, usually no)
+        out_path
+    ]
+    
+    print("Cropping video...", file=sys.stderr)
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"ffmpeg crop failed: {result.stderr.decode()}")
+        
+    return out_path
+
+
+class SelectionOverlay(Gtk.Window):
+    """Layer-shell overlay for drawing selection rectangle on first frame."""
+    
+    def __init__(self, pixbuf: GdkPixbuf.Pixbuf, on_done):
+        super().__init__()
+        
+        self.pixbuf = pixbuf
+        self.on_done = on_done
+        self.start_x = 0
+        self.start_y = 0
+        self.end_x = 0
+        self.end_y = 0
+        self.is_selecting = False
+        
+        # Layer shell setup
+        LayerShell.init_for_window(self)
+        LayerShell.set_layer(self, LayerShell.Layer.OVERLAY)
+        LayerShell.set_anchor(self, LayerShell.Edge.TOP, True)
+        LayerShell.set_anchor(self, LayerShell.Edge.BOTTOM, True)
+        LayerShell.set_anchor(self, LayerShell.Edge.LEFT, True)
+        LayerShell.set_anchor(self, LayerShell.Edge.RIGHT, True)
+        LayerShell.set_exclusive_zone(self, -1)
+        LayerShell.set_keyboard_mode(self, LayerShell.KeyboardMode.EXCLUSIVE)
+        LayerShell.set_namespace(self, "mangorecorder-overlay")
+        
+        # Drawing area
+        self.drawing_area = Gtk.DrawingArea()
+        self.drawing_area.set_draw_func(self.on_draw)
+        self.set_child(self.drawing_area)
+        
+        # Input controllers
+        click = Gtk.GestureClick.new()
+        click.set_button(0) # Listen to all buttons
+        click.connect("pressed", self.on_press)
+        click.connect("released", self.on_release)
+        self.drawing_area.add_controller(click)
+        
+        drag = Gtk.GestureDrag.new()
+        drag.connect("drag-update", self.on_drag)
+        self.drawing_area.add_controller(drag)
+        
+        key = Gtk.EventControllerKey.new()
+        key.connect("key-pressed", self.on_key)
+        self.add_controller(key)
+        
+        # Crosshair cursor
+        self.set_cursor(Gdk.Cursor.new_from_name("crosshair", None))
+    
+    def on_draw(self, area, cr, width, height):
+        # Draw the frame
+        Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, 0, 0)
+        cr.paint()
+        
+        # Draw selection if active
+        if self.is_selecting or (self.start_x != self.end_x and self.start_y != self.end_y):
+            x = min(self.start_x, self.end_x)
+            y = min(self.start_y, self.end_y)
+            w = abs(self.end_x - self.start_x)
+            h = abs(self.end_y - self.start_y)
+            
+            # Dim area outside selection
+            cr.set_source_rgba(0, 0, 0, 0.5)
+            cr.rectangle(0, 0, width, y)
+            cr.fill()
+            cr.rectangle(0, y + h, width, height - y - h)
+            cr.fill()
+            cr.rectangle(0, y, x, h)
+            cr.fill()
+            cr.rectangle(x + w, y, width - x - w, h)
+            cr.fill()
+            
+            # White border
+            cr.set_source_rgba(1, 1, 1, 1)
+            cr.set_line_width(2)
+            cr.rectangle(x, y, w, h)
+            cr.stroke()
+
+        # Draw instruction text
+        # Draw instruction text
+        layout = self.drawing_area.create_pango_layout("Crop your clip or right-click to skip cropping")
+        desc = Pango.FontDescription("Sans Bold 12")
+        layout.set_font_description(desc)
+        
+        # Black outline (stroke effect involves drawing multiple times or using paths, 
+        # simpler is just drawing black text offset slightly)
+        cr.set_source_rgba(0, 0, 0, 1)
+        cr.move_to(12, 12) # Offset
+        PangoCairo.show_layout(cr, layout)
+        cr.move_to(10, 12)
+        PangoCairo.show_layout(cr, layout)
+        cr.move_to(12, 10)
+        PangoCairo.show_layout(cr, layout)
+        cr.move_to(10, 10)
+        PangoCairo.show_layout(cr, layout)
+        
+        # Red text
+        cr.set_source_rgba(1, 0, 0, 1)
+        cr.move_to(11, 11)
+        PangoCairo.show_layout(cr, layout)
+    
+    def on_press(self, gesture, n_press, x, y):
+        button = gesture.get_current_button()
+        if button == 3: # Right click
+            # Use full video
+            self.close()
+            self.on_done(None, None, None, None, use_full=True)
+            return
+
+        self.start_x = x
+        self.start_y = y
+        self.end_x = x
+        self.end_y = y
+        self.is_selecting = True
+        self.drawing_area.queue_draw()
+    
+    def on_drag(self, gesture, offset_x, offset_y):
+        self.end_x = self.start_x + offset_x
+        self.end_y = self.start_y + offset_y
+        self.drawing_area.queue_draw()
+    
+    def on_release(self, gesture, n_press, x, y):
+        if not self.is_selecting:
+            return
+            
+        self.is_selecting = False
+        self.end_x = x
+        self.end_y = y
+        
+        sel_x = int(min(self.start_x, self.end_x))
+        sel_y = int(min(self.start_y, self.end_y))
+        sel_w = int(abs(self.end_x - self.start_x))
+        sel_h = int(abs(self.end_y - self.start_y))
+        
+        if sel_w > 5 and sel_h > 5:
+            self.close()
+            self.on_done(sel_x, sel_y, sel_w, sel_h, use_full=False)
+    
+    def on_key(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self.close()
+            self.on_done(None, None, None, None, use_full=False, cancelled=True)
+            return True
+        return False
+
+
+class MangoRecorder:
+    """Main recording application."""
+    
+    def __init__(self, duration):
+        self.app = Gtk.Application(application_id="com.mangowc.recorder")
+        self.app.connect("activate", self.on_activate)
+        self.duration = duration
+        self.temp_video = None
+        self.temp_frame = None
+        self.config = self.load_config()
+        self.save_path = Path(self.config["save_path_recorder"])
+
+    def load_config(self) -> dict:
+        config = {
+            "save_path_shooter": str(Path.home() / "Pictures" / "screenshots"),
+            "save_path_recorder": str(Path.home() / "Videos" / "screenvids")
+        }
+        config_path = Path.home() / ".config" / "mangoshooter" / "config"
+        
+        if config_path.exists():
+            with open(config_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if "=" in line and not line.startswith("#"):
+                        key, value = line.split("=", 1)
+                        config[key.strip()] = value.strip()
+        
+        if "save_path_recorder" in config:
+            config["save_path_recorder"] = str(Path(config["save_path_recorder"]).expanduser())
+            
+        return config
+        
+    def copy_to_clipboard(self, file_path: str):
+        """Copy file path/content to clipboard."""
+        # For nautilus/dolphin/etc copy file URI
+        uri = Path(file_path).as_uri()
+        subprocess.run(["wl-copy", "--type", "text/uri-list", uri])
+        print(f"Copied {uri} to clipboard")
+    
+    def save_video(self, source_path: str) -> str:
+        self.save_path.mkdir(parents=True, exist_ok=True)
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        filename = f"recording_{timestamp}.mp4"
+        target_path = self.save_path / filename
+        
+        shutil.copy2(source_path, target_path)
+        return str(target_path)
+    
+    def cleanup(self):
+        if self.temp_video and os.path.exists(self.temp_video):
+            os.unlink(self.temp_video)
+        if self.temp_frame and os.path.exists(self.temp_frame):
+            os.unlink(self.temp_frame)
+            
+    def on_selection_done(self, x, y, w, h, use_full=False, cancelled=False):
+        if cancelled:
+            print("Cancelled")
+            self.cleanup()
+            GLib.idle_add(self.app.quit)
+            return
+            
+        final_video = self.temp_video
+        
+        try:
+            if not use_full:
+                # Crop logic
+                final_video = crop_video(self.temp_video, x, y, w, h)
+                
+            saved_path = self.save_video(final_video)
+            print(f"Saved to: {saved_path}")
+            self.copy_to_clipboard(saved_path)
+            
+            # If we cropped, clean up the cropped temp file
+            if final_video != self.temp_video and os.path.exists(final_video):
+                os.unlink(final_video)
+                
+        except Exception as e:
+            print(f"Error processing video: {e}", file=sys.stderr)
+            
+        self.cleanup()
+        GLib.idle_add(self.app.quit)
+    
+    def on_activate(self, app):
+        try:
+            # 1. Detect monitor
+            output = get_active_monitor_name()
+            if not output:
+                print("Could not detect active monitor", file=sys.stderr)
+                app.quit()
+                return
+            
+            # 2. Record
+            self.temp_video = record_monitor(output, self.duration)
+            
+            # 3. Extract frame for selection
+            self.temp_frame = extract_first_frame(self.temp_video)
+            
+            # 4. Show overlay
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.temp_frame)
+            overlay = SelectionOverlay(pixbuf, self.on_selection_done)
+            overlay.set_application(app)
+            overlay.present()
+            
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            self.cleanup()
+            app.quit()
+            
+    def run(self):
+        return self.app.run([])
+
+
+def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="MangoRecorder - Video recorder for MangoWC")
+    parser.add_argument("-sec", type=int, required=True,
+                        help="Duration in seconds (1-60)")
+    
+    args = parser.parse_args()
+    
+    if args.sec < 1 or args.sec > 60:
+        print("Error: Seconds must be between 1 and 60", file=sys.stderr)
+        sys.exit(1)
+    
+    recorder = MangoRecorder(args.sec)
+    return recorder.run()
+
+
+if __name__ == "__main__":
+    sys.exit(main())

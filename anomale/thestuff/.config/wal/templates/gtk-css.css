@@ -1,0 +1,202 @@
+/* --- PYWAL-GTK3/4 COMPREHENSIVE THEME --- */
+
+/* Primary Palette Mapping */
+@define-color bg_color {background};
+@define-color fg_color {foreground};
+@define-color base_color {background};
+@define-color text_color {foreground};
+@define-color selected_bg_color {color2};
+@define-color selected_fg_color {background}; 
+@define-color accent_color {color2};
+@define-color accent_bg_color {color2};
+@define-color accent_fg_color {background};
+
+/* Modern Libadwaita & GTK4 Compatibility */
+@define-color window_bg_color @bg_color;
+@define-color window_fg_color @fg_color;
+@define-color view_bg_color @bg_color;
+@define-color view_fg_color @fg_color;
+@define-color headerbar_bg_color @bg_color;
+@define-color headerbar_fg_color @fg_color;
+@define-color card_bg_color alpha(@fg_color, 0.05);
+@define-color card_fg_color @fg_color;
+@define-color popover_bg_color @bg_color;
+@define-color popover_fg_color @fg_color;
+@define-color dialog_bg_color @bg_color;
+@define-color dialog_fg_color @fg_color;
+
+/* --- GLOBAL UI & DIALOG CLEANUP --- */
+* {{
+    outline-width: 0;
+    -gtk-secondary-caret-color: {color2};
+}}
+
+window.dialog, 
+window.modal, 
+.file-chooser,
+messagedialog {{
+    background-color: @bg_color;
+    color: @fg_color;
+}}
+
+decoration {{
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
+    border: 1px solid alpha({foreground}, 0.1);
+    margin: 0;
+}}
+
+/* --- TITLEBAR & HEADERBAR (The Gray Fix) --- */
+headerbar, 
+.titlebar,
+window.dialog.headerbar,
+window.modal.headerbar,
+messagedialog headerbar {{
+    background-image: none;
+    background-color: @bg_color;
+    color: @fg_color;
+    box-shadow: none;
+    border-bottom: 1px solid alpha({foreground}, 0.1);
+}}
+
+headerbar button, 
+.titlebar button {{
+    background-color: alpha({foreground}, 0.05);
+    border: 1px solid alpha({foreground}, 0.1);
+    color: @fg_color;
+    border-radius: 4px;
+}}
+
+/* --- SIDEBARS (The "Weird Border" Fix) --- */
+.sidebar, 
+placessidebar, 
+.file-chooser .sidebar,
+sidebartreeview,
+stacksidebar {{
+    background-color: @bg_color;
+    color: @fg_color;
+    border: none;
+}}
+
+/* Reset row styling to fix weird rounded edges */
+.sidebar row, 
+placessidebar row,
+placessidebar row.sidebar-new-row-style {{
+    padding: 8px 10px;
+    margin: 1px 5px;
+    border-radius: 4px;
+    border: none;
+    background-image: none;
+}}
+
+.sidebar row:selected, 
+placessidebar row:selected {{
+    background-color: {color2};
+    color: {background};
+    transition: all 150ms ease;
+}}
+
+.sidebar row:hover, 
+placessidebar row:hover {{
+    background-color: alpha({foreground}, 0.08);
+}}
+
+/* Fix for sidebar buttons/icons */
+.sidebar button,
+placessidebar button {{
+    background-image: none;
+    border: none;
+    color: @fg_color;
+}}
+
+/* --- MAIN FILE VIEW & SELECTIONS --- */
+.view, iconview, treeview {{
+    background-color: @bg_color;
+    color: @fg_color;
+}}
+
+.view:selected, 
+iconview:selected, 
+treeview:selected,
+.view:selected:focus, 
+iconview:selected:focus,
+treeview:selected:focus {{
+    background-color: {color2};
+    color: {background};
+    border-radius: 4px;
+}}
+
+/* Selection Rectangle */
+rubberband, .rubberband {{
+    background-color: alpha({color2}, 0.3);
+    border: 1px solid {color2};
+}}
+
+/* --- PATH BAR & BREADCRUMBS --- */
+.file-chooser .path-bar-container,
+.path-bar {{
+    background-color: @bg_color;
+}}
+
+.path-bar button {{
+    background-image: none;
+    background-color: alpha({foreground}, 0.05);
+    border: 1px solid transparent;
+    margin: 0 2px;
+    border-radius: 4px;
+    color: @fg_color;
+}}
+
+.path-bar button:checked {{
+    background-color: {color2};
+    color: {background};
+}}
+
+.path-bar button:hover {{
+    background-color: alpha({color2}, 0.2);
+}}
+
+/* --- ACTION AREA (Bottom of File Picker) --- */
+.file-chooser .dialog-action-area {{
+    background-color: @bg_color;
+    padding: 12px;
+    border-top: 1px solid alpha({foreground}, 0.1);
+}}
+
+/* Highlight the 'Open' or 'Save' button */
+.file-chooser .dialog-action-area button.suggested-action {{
+    background-color: {color2};
+    color: {background};
+    border: none;
+    font-weight: bold;
+}}
+
+/* --- SCROLLBARS --- */
+scrollbar {{
+    background-color: transparent;
+}}
+
+scrollbar slider {{
+    background-color: alpha({foreground}, 0.2);
+    border-radius: 20px;
+    min-width: 6px;
+    min-height: 6px;
+    margin: 2px;
+}}
+
+scrollbar slider:hover {{
+    background-color: alpha({color2}, 0.8);
+}}
+
+/* --- INPUTS & SEARCH --- */
+entry {{
+    background-color: alpha({foreground}, 0.05);
+    border: 1px solid alpha({foreground}, 0.1);
+    border-radius: 6px;
+    color: @fg_color;
+    padding: 6px;
+}}
+
+entry:focus {{
+    border-color: {color2};
+    box-shadow: 0 0 0 1px {color2};
+}}

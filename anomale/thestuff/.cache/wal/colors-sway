@@ -1,0 +1,21 @@
+set $wallpaper /home/jor/Pictures/wallpaper/1276391.jpg
+
+set $background #0e1c21
+set $foreground #c2c6c7
+
+set $color0 #0e1c21
+set $color1 #879fa8
+set $color2 #7998a9
+set $color3 #6b91aa
+set $color4 #969fa8
+set $color5 #a5a3a7
+set $color6 #b1acb1
+set $color7 #c2c6c7
+set $color8 #5d6d72
+set $color9 #879fa8
+set $color10 #7998a9
+set $color11 #6b91aa
+set $color12 #969fa8
+set $color13 #a5a3a7
+set $color14 #b1acb1
+set $color15 #c2c6c7

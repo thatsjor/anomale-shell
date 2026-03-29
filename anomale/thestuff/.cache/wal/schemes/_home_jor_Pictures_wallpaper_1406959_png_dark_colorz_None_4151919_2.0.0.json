@@ -1,0 +1,28 @@
+{
+    "checksum": "ecee47fce24ef5404587760404bb744d",
+    "wallpaper": "/home/jor/Pictures/wallpaper/1406959.png",
+    "alpha": "100",
+    "special": {
+        "background": "#1a0d0b",
+        "foreground": "#c5c2c2",
+        "cursor": "#c5c2c2"
+    },
+    "colors": {
+        "color0": "#1a0d0b",
+        "color1": "#ad382d",
+        "color2": "#ab6f44",
+        "color3": "#aa9063",
+        "color4": "#96a88c",
+        "color5": "#58a69e",
+        "color6": "#1197a8",
+        "color7": "#c5c2c2",
+        "color8": "#6f5c5a",
+        "color9": "#ad382d",
+        "color10": "#ab6f44",
+        "color11": "#aa9063",
+        "color12": "#96a88c",
+        "color13": "#58a69e",
+        "color14": "#1197a8",
+        "color15": "#c5c2c2"
+    }
+}

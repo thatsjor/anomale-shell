@@ -1,0 +1,1 @@
+wal -l --backend colorz -i [[w]] && mmsg -d reload_config

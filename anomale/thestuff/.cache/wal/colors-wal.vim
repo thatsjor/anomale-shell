@@ -1,0 +1,23 @@
+" Special
+let wallpaper  = "/home/jor/Pictures/wallpaper/1276391.jpg"
+let background = "#0e1c21"
+let foreground = "#c2c6c7"
+let cursor     = "#c2c6c7"
+
+" Colors
+let color0  = "#0e1c21"
+let color1  = "#879fa8"
+let color2  = "#7998a9"
+let color3  = "#6b91aa"
+let color4  = "#969fa8"
+let color5  = "#a5a3a7"
+let color6  = "#b1acb1"
+let color7  = "#c2c6c7"
+let color8  = "#5d6d72"
+let color9  = "#879fa8"
+let color10 = "#7998a9"
+let color11 = "#6b91aa"
+let color12 = "#969fa8"
+let color13 = "#a5a3a7"
+let color14 = "#b1acb1"
+let color15 = "#c2c6c7"

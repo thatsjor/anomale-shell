@@ -1,0 +1,28 @@
+{
+    "checksum": "4476423c9892a51fc76500b3d7bcd013",
+    "wallpaper": "/home/jor/Pictures/wallpaper/wp3618256-lcars-wallpapers.png",
+    "alpha": "100",
+    "special": {
+        "background": "#180a0a",
+        "foreground": "#c5c1c1",
+        "cursor": "#c5c1c1"
+    },
+    "colors": {
+        "color0": "#180a0a",
+        "color1": "#b30000",
+        "color2": "#b16900",
+        "color3": "#b88e46",
+        "color4": "#1566b7",
+        "color5": "#5c7bbd",
+        "color6": "#ada0af",
+        "color7": "#c5c1c1",
+        "color8": "#6d5959",
+        "color9": "#b30000",
+        "color10": "#b16900",
+        "color11": "#b88e46",
+        "color12": "#1566b7",
+        "color13": "#5c7bbd",
+        "color14": "#ada0af",
+        "color15": "#c5c1c1"
+    }
+}

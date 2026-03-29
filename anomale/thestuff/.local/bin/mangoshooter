@@ -1,0 +1,340 @@
+#!/usr/bin/env python3
+"""
+MangoShooter - Screenshot tool for MangoWC
+
+Uses grim for capture (no overlay), then shows our own frozen-image overlay for selection.
+This avoids triggering blur since capture happens before any overlay appears.
+"""
+
+import os
+import sys
+
+# Fix gtk4-layer-shell linking order by setting LD_PRELOAD and relaunching
+LAYER_SHELL_LIB = "/usr/lib/libgtk4-layer-shell.so"
+if os.path.exists(LAYER_SHELL_LIB) and LAYER_SHELL_LIB not in os.environ.get('LD_PRELOAD', ''):
+    os.environ['LD_PRELOAD'] = LAYER_SHELL_LIB
+    os.execv(sys.executable, [sys.executable] + sys.argv)
+
+# Force Wayland backend for GTK4
+os.environ['GDK_BACKEND'] = 'wayland'
+
+import gi
+import subprocess
+import tempfile
+from pathlib import Path
+from datetime import datetime
+
+gi.require_version('Gtk', '4.0')
+gi.require_version('Gdk', '4.0')
+gi.require_version('Gtk4LayerShell', '1.0')
+
+from gi.repository import Gtk, Gdk, GLib, GdkPixbuf, Gtk4LayerShell as LayerShell
+
+
+def get_active_monitor_name() -> str:
+    """Get the active/selected monitor name using mmsg from MangoWC."""
+    try:
+        result = subprocess.run(['mmsg', '-g', '-o'], capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            for line in result.stdout.strip().split('\n'):
+                parts = line.split()
+                # Format: "OUTPUT_NAME selmon 0/1"
+                if len(parts) >= 3 and parts[1] == 'selmon' and parts[2] == '1':
+                    return parts[0]
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    # Fallback: try wlr-randr and return first output
+    try:
+        result = subprocess.run(['wlr-randr'], capture_output=True, text=True, timeout=2)
+        if result.returncode == 0:
+            for line in result.stdout.split('\n'):
+                if line and not line.startswith(' ') and not line.startswith('\t'):
+                    return line.split()[0]
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+    
+    return None
+
+
+def capture_screen(output: str = None) -> str:
+    """Capture screen using grim. Returns path to temp PNG file."""
+    fd, path = tempfile.mkstemp(suffix=".png")
+    os.close(fd)
+    
+    cmd = ["grim"]
+    if output:
+        cmd.extend(["-o", output])
+    cmd.append(path)
+    
+    result = subprocess.run(cmd, capture_output=True)
+    if result.returncode != 0:
+        raise RuntimeError(f"grim failed: {result.stderr.decode()}")
+    
+    return path
+
+
+class SelectionOverlay(Gtk.Window):
+    """Layer-shell overlay for drawing selection rectangle on frozen screenshot."""
+    
+    def __init__(self, pixbuf: GdkPixbuf.Pixbuf, on_done):
+        super().__init__()
+        
+        self.pixbuf = pixbuf
+        self.on_done = on_done
+        self.start_x = 0
+        self.start_y = 0
+        self.end_x = 0
+        self.end_y = 0
+        self.is_selecting = False
+        
+        # Layer shell setup
+        LayerShell.init_for_window(self)
+        LayerShell.set_layer(self, LayerShell.Layer.OVERLAY)
+        LayerShell.set_anchor(self, LayerShell.Edge.TOP, True)
+        LayerShell.set_anchor(self, LayerShell.Edge.BOTTOM, True)
+        LayerShell.set_anchor(self, LayerShell.Edge.LEFT, True)
+        LayerShell.set_anchor(self, LayerShell.Edge.RIGHT, True)
+        LayerShell.set_exclusive_zone(self, -1)
+        LayerShell.set_keyboard_mode(self, LayerShell.KeyboardMode.EXCLUSIVE)
+        LayerShell.set_namespace(self, "mangoshooter-overlay")
+        
+        # Drawing area
+        self.drawing_area = Gtk.DrawingArea()
+        self.drawing_area.set_draw_func(self.on_draw)
+        self.set_child(self.drawing_area)
+        
+        # Input controllers
+        click = Gtk.GestureClick.new()
+        click.connect("pressed", self.on_press)
+        click.connect("released", self.on_release)
+        self.drawing_area.add_controller(click)
+        
+        drag = Gtk.GestureDrag.new()
+        drag.connect("drag-update", self.on_drag)
+        self.drawing_area.add_controller(drag)
+        
+        key = Gtk.EventControllerKey.new()
+        key.connect("key-pressed", self.on_key)
+        self.add_controller(key)
+        
+        # Crosshair cursor
+        self.set_cursor(Gdk.Cursor.new_from_name("crosshair", None))
+    
+    def on_draw(self, area, cr, width, height):
+        # Draw the frozen screenshot
+        Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, 0, 0)
+        cr.paint()
+        
+        # Draw selection if active
+        if self.is_selecting or (self.start_x != self.end_x and self.start_y != self.end_y):
+            x = min(self.start_x, self.end_x)
+            y = min(self.start_y, self.end_y)
+            w = abs(self.end_x - self.start_x)
+            h = abs(self.end_y - self.start_y)
+            
+            # Dim area outside selection
+            cr.set_source_rgba(0, 0, 0, 0.5)
+            cr.rectangle(0, 0, width, y)
+            cr.fill()
+            cr.rectangle(0, y + h, width, height - y - h)
+            cr.fill()
+            cr.rectangle(0, y, x, h)
+            cr.fill()
+            cr.rectangle(x + w, y, width - x - w, h)
+            cr.fill()
+            
+            # White border
+            cr.set_source_rgba(1, 1, 1, 1)
+            cr.set_line_width(2)
+            cr.rectangle(x, y, w, h)
+            cr.stroke()
+    
+    def on_press(self, gesture, n_press, x, y):
+        self.start_x = x
+        self.start_y = y
+        self.end_x = x
+        self.end_y = y
+        self.is_selecting = True
+        self.drawing_area.queue_draw()
+    
+    def on_drag(self, gesture, offset_x, offset_y):
+        self.end_x = self.start_x + offset_x
+        self.end_y = self.start_y + offset_y
+        self.drawing_area.queue_draw()
+    
+    def on_release(self, gesture, n_press, x, y):
+        self.is_selecting = False
+        self.end_x = x
+        self.end_y = y
+        
+        sel_x = int(min(self.start_x, self.end_x))
+        sel_y = int(min(self.start_y, self.end_y))
+        sel_w = int(abs(self.end_x - self.start_x))
+        sel_h = int(abs(self.end_y - self.start_y))
+        
+        if sel_w > 5 and sel_h > 5:
+            self.close()
+            self.on_done(sel_x, sel_y, sel_w, sel_h)
+    
+    def on_key(self, controller, keyval, keycode, state):
+        if keyval == Gdk.KEY_Escape:
+            self.close()
+            self.on_done(None, None, None, None)
+            return True
+        return False
+
+
+class MangoShooter:
+    """Main screenshot application."""
+    
+    def __init__(self):
+        self.app = Gtk.Application(application_id="com.mangowc.shooter")
+        self.app.connect("activate", self.on_activate)
+        self.mode = "area"
+        self.save_to_file = False
+        self.temp_file = None
+        self.config = self.load_config()
+    
+    def load_config(self) -> dict:
+        config = {
+            "save_path_shooter": str(Path.home() / "Pictures" / "screenshots"),
+            "save_path_recorder": str(Path.home() / "Videos" / "screenvids")
+        }
+        config_path = Path.home() / ".config" / "mangoshooter" / "config"
+        
+        if config_path.exists():
+            with open(config_path) as f:
+                for line in f:
+                    line = line.strip()
+                    if "=" in line and not line.startswith("#"):
+                        key, value = line.split("=", 1)
+                        config[key.strip()] = value.strip()
+        
+        if "save_path_shooter" in config:
+            config["save_path_shooter"] = str(Path(config["save_path_shooter"]).expanduser())
+            
+        return config
+    
+    def copy_to_clipboard(self, png_data: bytes):
+        """Copy PNG to clipboard using wl-copy."""
+        proc = subprocess.Popen(
+            ["wl-copy", "-t", "image/png"],
+            stdin=subprocess.PIPE
+        )
+        proc.communicate(input=png_data)
+    
+    def save_screenshot(self, png_data: bytes) -> str:
+        save_dir = Path(self.config["save_path_shooter"])
+        save_dir.mkdir(parents=True, exist_ok=True)
+        
+        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+        path = save_dir / f"screenshot_{timestamp}.png"
+        
+        with open(path, "wb") as f:
+            f.write(png_data)
+        
+        return str(path)
+    
+    def on_selection_done(self, x, y, w, h):
+        """Called when area selection is complete."""
+        if x is None:
+            print("Cancelled")
+            self.cleanup()
+            GLib.idle_add(self.app.quit)
+            return
+        
+        try:
+            pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.temp_file)
+            cropped = GdkPixbuf.Pixbuf.new(
+                GdkPixbuf.Colorspace.RGB,
+                pixbuf.get_has_alpha(),
+                8, w, h
+            )
+            pixbuf.copy_area(x, y, w, h, cropped, 0, 0)
+            
+            success, data = cropped.save_to_bufferv("png", [], [])
+            if success:
+                self.copy_to_clipboard(data)
+                print("Screenshot copied to clipboard!")
+                
+                if self.save_to_file:
+                    path = self.save_screenshot(data)
+                    print(f"Saved to: {path}")
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+        
+        self.cleanup()
+        GLib.idle_add(self.app.quit)
+    
+    def cleanup(self):
+        if self.temp_file and os.path.exists(self.temp_file):
+            try:
+                os.unlink(self.temp_file)
+            except:
+                pass
+    
+    def on_activate(self, app):
+        try:
+            if self.mode == "area":
+                # 1. Get active monitor and capture only that screen (before any overlay)
+                output = get_active_monitor_name()
+                self.temp_file = capture_screen(output)
+                
+                # 2. Show overlay with frozen screenshot for selection
+                pixbuf = GdkPixbuf.Pixbuf.new_from_file(self.temp_file)
+                overlay = SelectionOverlay(pixbuf, self.on_selection_done)
+                overlay.set_application(app)
+                overlay.present()
+                
+            elif self.mode == "monitor":
+                # Get monitor where cursor is and capture just that
+                output = get_active_monitor_name()
+                self.temp_file = capture_screen(output)
+                
+                with open(self.temp_file, "rb") as f:
+                    png_data = f.read()
+                
+                self.copy_to_clipboard(png_data)
+                print(f"Screenshot of {output or 'all monitors'} copied to clipboard!")
+                
+                if self.save_to_file:
+                    path = self.save_screenshot(png_data)
+                    print(f"Saved to: {path}")
+                
+                self.cleanup()
+                app.quit()
+                
+            elif self.mode == "window":
+                # TODO: Get focused window geometry from mmsg/dwl-ipc
+                print("Window mode not yet implemented")
+                app.quit()
+                
+        except Exception as e:
+            print(f"Error: {e}", file=sys.stderr)
+            self.cleanup()
+            app.quit()
+    
+    def run(self, mode: str, save: bool):
+        self.mode = mode
+        self.save_to_file = save
+        return self.app.run([])
+
+
+def main():
+    import argparse
+    
+    parser = argparse.ArgumentParser(description="MangoShooter - Screenshot tool for MangoWC")
+    parser.add_argument("mode", choices=["area", "monitor", "window"],
+                        help="Screenshot mode: area, monitor, or window")
+    parser.add_argument("-s", "--save", action="store_true",
+                        help="Save to file in addition to clipboard")
+    
+    args = parser.parse_args()
+    
+    shooter = MangoShooter()
+    return shooter.run(args.mode, args.save)
+
+
+if __name__ == "__main__":
+    sys.exit(main())
