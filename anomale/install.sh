@@ -186,12 +186,13 @@ sudo pacman -S sddm
 sudo systemctl enable sddm
 sudo systemctl set-default graphical.target
 
+clear
+
 cat << "EOF"
 The Script has completed successfully and you are very, very happy about it.
 
 Do yourself a favor and reboot your computer. 
 
-When you get back, log into the TTY and start your compositor by typing 'mango'.
-
-No, i'm not going to set up a display manager for you, dont be lazy.
+When you get back, you'll find that basic sddm theme. Its okay. You hate it, I hate it.
+We can hate it together.
 EOF
