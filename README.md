@@ -8,7 +8,10 @@ You should, in theory, be able to run these on base arch linux, but make sure th
 My default mangowm bindings will be strange. You can look at the config file to see them, but the important ones to be able to navigate to the config once in mangowm are:
 
 SUPER+Tab = Spawn Terminal
+
 SUPER+q = exit tile
+
 Alt+Space = Apps Menu
+
 Super+Space = Shutdown/Power Menu
 
