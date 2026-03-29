@@ -179,6 +179,7 @@ do
     esac
 done
 clear
+chmod +x ~/.local/bin/*
 
 cat << "EOF"
 The Script has completed successfully and you are very, very happy about it.
