@@ -122,9 +122,19 @@ class SelectionOverlay(Gtk.Window):
         self.set_cursor(Gdk.Cursor.new_from_name("crosshair", None))
     
     def on_draw(self, area, cr, width, height):
+        # Calculate scale ratio (physical / logical)
+        scale_x = self.pixbuf.get_width() / width if width > 0 else 1.0
+        scale_y = self.pixbuf.get_height() / height if height > 0 else 1.0
+        self.scale_x = scale_x if scale_x > 0 else 1.0
+        self.scale_y = scale_y if scale_y > 0 else 1.0
+        
+        cr.save()
+        # Scale to draw the physical image into the logical area
+        cr.scale(1.0 / self.scale_x, 1.0 / self.scale_y)
         # Draw the frozen screenshot
         Gdk.cairo_set_source_pixbuf(cr, self.pixbuf, 0, 0)
         cr.paint()
+        cr.restore()
         
         # Draw selection if active
         if self.is_selecting or (self.start_x != self.end_x and self.start_y != self.end_y):
@@ -168,14 +178,22 @@ class SelectionOverlay(Gtk.Window):
         self.end_x = x
         self.end_y = y
         
-        sel_x = int(min(self.start_x, self.end_x))
-        sel_y = int(min(self.start_y, self.end_y))
-        sel_w = int(abs(self.end_x - self.start_x))
-        sel_h = int(abs(self.end_y - self.start_y))
+        sel_x = min(self.start_x, self.end_x)
+        sel_y = min(self.start_y, self.end_y)
+        sel_w = abs(self.end_x - self.start_x)
+        sel_h = abs(self.end_y - self.start_y)
         
-        if sel_w > 5 and sel_h > 5:
+        scale_x = getattr(self, 'scale_x', 1.0)
+        scale_y = getattr(self, 'scale_y', 1.0)
+        
+        phys_x = int(sel_x * scale_x)
+        phys_y = int(sel_y * scale_y)
+        phys_w = int(sel_w * scale_x)
+        phys_h = int(sel_h * scale_y)
+        
+        if phys_w > 5 and phys_h > 5:
             self.close()
-            self.on_done(sel_x, sel_y, sel_w, sel_h)
+            self.on_done(phys_x, phys_y, phys_w, phys_h)
     
     def on_key(self, controller, keyval, keycode, state):
         if keyval == Gdk.KEY_Escape:

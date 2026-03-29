@@ -1,17 +1,11 @@
  #!/bin/bash
 
 
-export LIBVA_DRIVER_NAME=nvidia
-
 export XDG_SESSION_TYPE=wayland
-
-export __GLX_VENDOR_LIBRARY_NAME=nvidia
 
 export ELECTRON_OZONE_PLATFORM_HINT=auto
 
 export NVD_BACKEND=direct
-
-export GBM_BACKEND=nvidia-drm
 
 export XDG_CURRENT_DESKTOP=wlroots
 
