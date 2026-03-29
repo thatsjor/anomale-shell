@@ -107,7 +107,7 @@ chsh -s /usr/bin/fish
 rustup default stable
 
 #create anomale directory
-mkdir ~/anomale/shell/
+mkdir "$THE_STUFF/shell/"
 
 #extract anomale to thestuff/shell/, build it, and copy the binary to ~/.local/bin/ & make executable.
 tar -xvzf "$THE_STUFF/anomale-source.tar.gz" -C "$THE_STUFF/shell/"
@@ -141,13 +141,18 @@ ln -s ~/.cache/wal/gtk-css.css ~/.config/gtk-4.0/gtk-dark.css
 ln -s ~/.cache/wal/gtk-css.css ~/.config/gtk-3.0/gtk.css
 ln -s ~/.cache/wal/gtk-css.css ~/.config/gtk-3.0/gtk-dark.css
 
+#install font and some python packages
+getnf -i 0xProto
+pip install colorz --break-system-packages
+
+#nvidia check
 clear
 cat << "EOF"
 To make sure your environment variables in your autostart script are configured properly, Please Share whether 
 or not you suffer from "I have an NVidia GPU and Use Linux" disorder.
 EOF
 
-PS3="Choose (but don't be a coward): "
+PS3="Choose: "
 options=("I Have A NVidia GPU" "I Do Not have A NVidia GPU")
 
 select opt in "${options[@]}"
