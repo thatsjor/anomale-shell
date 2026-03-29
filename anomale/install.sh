@@ -181,6 +181,11 @@ done
 clear
 chmod +x ~/.local/bin/*
 
+#sddm must be installed for some things to work. no theme yet, just testing.
+sudo pacman -S sddm
+sudo systemctl enable sddm
+sudo systemctl set-default graphical.target
+
 cat << "EOF"
 The Script has completed successfully and you are very, very happy about it.
 
