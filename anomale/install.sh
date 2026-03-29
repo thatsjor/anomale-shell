@@ -112,6 +112,7 @@ mkdir "$THE_STUFF/shell/"
 #extract anomale to thestuff/shell/, build it, and copy the binary to ~/.local/bin/ & make executable.
 tar -xvzf "$THE_STUFF/anomale-source.tar.gz" -C "$THE_STUFF/shell/"
 (cd "$THE_STUFF/shell/" && cargo build --release)
+mkdir -p ~/.local/bin/
 cp "$THE_STUFF/shell/target/release/anomale" ~/.local/bin/
 chmod +x ~/.local/bin/anomale
 
