@@ -87,21 +87,58 @@ clear
 
 #initialization - perms request
 echo "Starting the installation..."
-echo "This script requires sudo for various commands during setup. 
-This first Section will install all necessary packages and run some setup commands.
-You may be asked for your password multiple times.
-Pay attention during the setup process, while you can spam Enter for most of it (works on my machine),
-only you know what configuration you need."
+echo "This script requires sudo for various commands during setup. You may be asked several times throughout.
+sleep 3
 sudo -v 
 
-#installs packages necessary for my dots and anomale
-yay -S --needed - < "$THE_STUFF/aurlist.txt"
+clear
+cat << "EOF"
+These Dots should work well on Arch Linux, EndeavourOS, and CachyOS.
+Howevever, this script must do a few things differently depending on your OS's default configuration. 
 
-#installs fisher and tide without triggering any config wizards
-fish -c "set -U tide_install_no_configure; fisher install jorgebucaran/fisher IlanCosman/tide@v6"
+(If you have EndeavourOS, unless you unselected it during install, you already have Yay.)
+(If you have CachyOS, you have paru installed already.)
+(If you have base Arch Linux, You don't have either by default)
 
-#set fish as system-wide shell
+EOF
+
+PS3="Choose: "
+options=("I HAVE YAY" "I HAVE PARU" "PLEASE INSTALL YAY FOR ME")
+
+select opt in "${options[@]}"
+do
+    case $opt in
+        "I HAVE YAY")
+            echo "You have yay, so the script will use that."
+            yay -S --needed - < "$THE_STUFF/aurlist.txt"
+            sleep 1
+            break 
+            ;;
+        "I HAVE PARU")
+            echo "You have paru, so the script will use that."
+            paru -S --needed --skipreview - < "$THE_STUFF/aurlist.txt"
+            sleep 1
+            break 
+            ;;
+        "PLEASE INSTALL YAY FOR ME")
+            echo "You don't have either, so the script will install yay for you and use that."
+            git clone https://aur.archlinux.org/yay.git
+            cd yay
+            makepkg -si
+            cd ~
+            rm -rf ~/yay
+            yay -S --needed - < "$THE_STUFF/aurlist.txt"
+            break
+            ;;
+        *) 
+            echo "Invalid entry. Please pick 1 or 2."
+            ;;
+    esac
+done
+
+#set fish as system-wide shell and set local/bin path.
 chsh -s /usr/bin/fish
+fish_add_path ~/.local/bin
 
 #Required to build anomale
 rustup default stable
@@ -153,20 +190,21 @@ To make sure your environment variables in your autostart script are configured 
 or not you suffer from "I have an NVidia GPU and Use Linux" disorder.
 EOF
 
-PS3="Choose: "
-options=("I Have A NVidia GPU" "I Do Not have A NVidia GPU")
+
+PS3="DO YOU HAVE NVIDIA GPU?: "
+options=("YES" "NO")
 
 select opt in "${options[@]}"
 do
     case $opt in
-        "I Have A NVidia GPU")
+        "YES")
             echo "sorry..."
             rm -f ~/.local/bin/mangowc-start-nonvidia.sh
             mv ~/.local/bin/mangowc-start-nvidia.sh ~/.local/bin/mangowc-start.sh
             sleep 1
             break 
             ;;
-        "I Do Not have A NVidia GPU")
+        "NO")
             echo "lucky..."
             rm -f ~/.local/bin/mangowc-start-nvidia.sh
             mv ~/.local/bin/mangowc-start-nonvidia.sh ~/.local/bin/mangowc-start.sh
