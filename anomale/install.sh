@@ -117,7 +117,7 @@ do
             ;;
         "I HAVE PARU")
             echo "You have paru, so the script will use that."
-            paru -S --needed --skipreview - < "$THE_STUFF/aurlist.txt"
+            xargs -a "$THE_STUFF/aurlist.txt" paru -S --needed --skipreview
             sleep 1
             break 
             ;;
