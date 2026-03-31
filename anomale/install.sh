@@ -87,7 +87,7 @@ clear
 
 #initialization - perms request
 echo "Starting the installation..."
-echo "This script requires sudo for various commands during setup. You may be asked several times throughout.
+echo "This script requires sudo for various commands during setup. You may be asked several times throughout."
 sleep 3
 sudo -v 
 
