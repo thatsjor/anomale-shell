@@ -49,7 +49,7 @@ The script is meant to be installed on top of Desktopless or Minimal OS installs
 However, it assumes you handle graphics drivers YOURSELF.
 
 This script installs the latest build of mangowm for you from the AUR, and does not have 
-any other pre-requisites. If you have neither yay or paru installed prior to running this script, yay will be installed for you.
+any other pre-requisites. If you have neither yay nor paru installed prior to running this script, yay will be installed for you.
 
 These dots and this configuration are based on my personal preference and NOTHING more. My default mango bindings
 may not be to your liking. Anomale-specific bindings will be in a single section of the config file with brief explanations.
