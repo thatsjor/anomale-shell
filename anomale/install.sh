@@ -191,14 +191,14 @@ options=("YES" "NO")
 select opt in "${options[@]}"
 do
     case $opt in
-        "I Have A NVidia GPU")
+        "YES")
             echo "Installing SDDM (you'll have to configure/theme it yourself)"
             sudo pacman -S sddm
             sudo systemctl enable sddm
             sudo systemctl set-default graphical.target
             break 
             ;;
-        "I Do Not have A NVidia GPU")
+        "NO")
             echo "You'll have to log in from TTY if you do not set up a display manager on your own."
             break
             ;;
