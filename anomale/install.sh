@@ -178,14 +178,35 @@ do
             ;;
     esac
 done
-clear
 chmod +x ~/.local/bin/*
+clear
 
-#sddm must be installed for some things to work. no theme yet, just testing.
-sudo pacman -S sddm
-sudo systemctl enable sddm
-sudo systemctl set-default graphical.target
+cat << "EOF"
+Would you like SDDM?
+EOF
 
+PS3="Choose: "
+options=("YES" "NO")
+
+select opt in "${options[@]}"
+do
+    case $opt in
+        "I Have A NVidia GPU")
+            echo "Installing SDDM (you'll have to configure/theme it yourself)"
+            sudo pacman -S sddm
+            sudo systemctl enable sddm
+            sudo systemctl set-default graphical.target
+            break 
+            ;;
+        "I Do Not have A NVidia GPU")
+            echo "You'll have to log in from TTY if you do not set up a display manager on your own."
+            break
+            ;;
+        *) 
+            echo "Invalid entry. Please pick 1 or 2."
+            ;;
+    esac
+done
 clear
 
 cat << "EOF"
