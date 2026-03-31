@@ -123,6 +123,7 @@ do
             ;;
         "PLEASE INSTALL YAY FOR ME")
             echo "You don't have either, so the script will install yay for you and use that."
+            sudo pacman -S --needed git base-devel
             git clone https://aur.archlinux.org/yay.git
             cd yay
             makepkg -si
