@@ -42,16 +42,17 @@ that are comfortable working in their terminal. These are not your average dotfi
 various widgets and menus that make a somewhat funcitonal Desktop Environment.
 
 This shell and these dots appreciate the simplicity that mangowm provides its users, and expands 
-ever so slightly on that philosophy. This script is intended to be run on a FRESH installation of EndeavourOS,
-installed with 'No Desktop'. If you are NOT on a fresh installation of EndeavourOS or do not 
-already have yay installed, exit this script and install yay, as it is required for this script to work.
+ever so slightly on that philosophy. 
+
+This script should run smoothly on Arch, CachyOS, and EndeavourOS.
+The script is meant to be installed on top of Desktopless or Minimal OS installs, but may work regardless.
+However, it assumes you handle graphics drivers YOURSELF.
+
 This script installs the latest build of mangowm for you from the AUR, and does not have 
-any other pre-requisites.
+any other pre-requisites. If you have neither yay or paru installed prior to running this script, yay will be installed for you.
 
 These dots and this configuration are based on my personal preference and NOTHING more. My default mango bindings
 may not be to your liking. Anomale-specific bindings will be in a single section of the config file with brief explanations.
-
-Untested on other Arch-Based distros.
 
 If you understand this, and you're feeling brave, you may proceed...
 EOF
