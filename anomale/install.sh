@@ -203,7 +203,6 @@ do
             echo "sorry..."
             rm -f ~/.local/bin/mangowc-start-nonvidia.sh
             mv ~/.local/bin/mangowc-start-nvidia.sh ~/.local/bin/mangowc-start.sh
-            sudo pacman -S nvidia-utils nvidia-open
             sleep 1
             break 
             ;;
