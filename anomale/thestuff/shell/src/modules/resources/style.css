@@ -1,0 +1,18 @@
+.resource-module {
+    margin: 0;
+    padding: 0;
+}
+
+.resource-module label {
+    font-weight: bold;
+    padding: 0;
+}
+
+#bar-content .resource-cpu label,
+#bar-content .resource-gpu label {
+    margin-top: 0px; /* Counter-balance the text baseline shift from the sans degree symbol */
+}
+
+.resource-oom label {
+    color: #ff0000;
+}

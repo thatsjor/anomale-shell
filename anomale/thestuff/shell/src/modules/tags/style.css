@@ -1,0 +1,45 @@
+.tags-container {
+    padding: 0 0px;
+    margin: 0px 0px;
+}
+
+.tag {
+    margin: 0 0px;
+    padding: 0 4px;
+    background-color: transparent;
+    color: var(--font-color);
+    border-radius: 100%;
+
+}
+
+/* Remove side padding for edge tags to align with layout margin */
+.tag:first-child {
+    padding-left: 0;
+}
+
+.tag:last-child {
+    padding-right: 0;
+}
+
+.tag .dot {
+    opacity: 0;
+}
+
+
+.tag.selected .dot {
+    opacity: 1;
+}
+
+.tag.selected {
+    background-color: rgba(255, 255, 255, 0);
+    font-weight: bold;
+}
+
+.tag.occupied {
+    color: var(--font-color);
+}
+
+.tag.urgent {
+    background-color: #ff0000;
+    color: #ffffff;
+}

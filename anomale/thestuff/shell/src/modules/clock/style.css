@@ -1,0 +1,7 @@
+.clock {
+    padding: 0 10px;
+    background-color: transparent;
+    color: var(--font-color);
+    font-weight: bold;
+    opacity: 0.9;
+}

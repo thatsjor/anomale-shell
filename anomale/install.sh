@@ -44,7 +44,7 @@ various widgets and menus that make a somewhat funcitonal Desktop Environment.
 This shell and these dots appreciate the simplicity that mangowm provides its users, and expands 
 ever so slightly on that philosophy. 
 
-This script should run smoothly on Arch, CachyOS, and EndeavourOS.
+This script should run smoothly on Arch (perfect), CachyOS (almost perfect, nothing you cant handle after the script runs), and EndeavourOS (perfect).
 The script is meant to be installed on top of Desktopless or Minimal OS installs, but may work regardless.
 However, it assumes you handle graphics drivers YOURSELF.
 
@@ -148,8 +148,7 @@ rustup default stable
 #create anomale directory
 mkdir "$THE_STUFF/shell/"
 
-#extract anomale to thestuff/shell/, build it, and copy the binary to ~/.local/bin/ & make executable.
-tar -xvzf "$THE_STUFF/anomale-source.tar.gz" -C "$THE_STUFF/shell/"
+#build anomale from source, and copy the binary to ~/.local/bin/ & make executable.
 (cd "$THE_STUFF/shell/" && cargo build --release)
 mkdir -p ~/.local/bin/
 cp "$THE_STUFF/shell/target/release/anomale" ~/.local/bin/
