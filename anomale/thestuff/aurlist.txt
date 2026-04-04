@@ -21,6 +21,7 @@ python-haishoku
 python-pip
 python-pywal16
 python-pywalfox
+python-cairo
 rustup
 speech-dispatcher
 superfile

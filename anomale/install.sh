@@ -183,7 +183,6 @@ ln -s ~/.cache/wal/gtk-css.css ~/.config/gtk-3.0/gtk-dark.css
 #install font and some python packages
 getnf -i 0xProto
 pip install colorz --break-system-packages
-sudo pacman -S python-cairo
 
 #nvidia check
 clear
