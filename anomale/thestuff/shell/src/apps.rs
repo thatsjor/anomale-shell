@@ -56,7 +56,7 @@ impl AppLauncher {
             .margin_top(200)
             .vexpand(true)
             .build();
-        window.add_css_class("fullscreen-bg");
+        window.add_css_class("apps-window");
 
         // Inner launcher box with border/styling
         let launcher_box = gtk4::Box::builder()

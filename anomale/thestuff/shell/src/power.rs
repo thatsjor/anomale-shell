@@ -50,7 +50,7 @@ impl PowerMenu {
             .halign(Align::Center)
             .valign(Align::Center)
             .build();
-        window.add_css_class("fullscreen-bg");
+        window.add_css_class("power-window");
 
         // Inner launcher box (using same class for consistency)
         let launcher_box = gtk4::Box::builder()

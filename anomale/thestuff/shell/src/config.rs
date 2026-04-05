@@ -384,6 +384,9 @@ pub struct AppConfig {
     pub selection_text_color: String,
     pub pywal: bool,
     pub background_opacity: f64,
+    pub apps_opacity: Option<f64>,
+    pub power_opacity: Option<f64>,
+    pub wallpapers_opacity: Option<f64>,
     pub list_text_color: String,
     pub highlight_color: String,
     pub highlight_text_color: String,
@@ -413,6 +416,9 @@ impl Default for AppConfig {
             selection_text_color: "#cdd6f4ff".to_string(),
             pywal: false,
             background_opacity: 1.0,
+            apps_opacity: None,
+            power_opacity: None,
+            wallpapers_opacity: None,
             list_text_color: "#cdd6f4ff".to_string(),
             highlight_color: "#313244ff".to_string(),
             highlight_text_color: "#cdd6f4ff".to_string(),
@@ -579,6 +585,15 @@ impl AppConfig {
         if let Some(val) = properties.get("background_opacity") {
             if let Ok(v) = val.parse() { self.background_opacity = v; }
         }
+        if let Some(val) = properties.get("apps_opacity") {
+            if let Ok(v) = val.parse() { self.apps_opacity = Some(v); }
+        }
+        if let Some(val) = properties.get("power_opacity") {
+            if let Ok(v) = val.parse() { self.power_opacity = Some(v); }
+        }
+        if let Some(val) = properties.get("wallpapers_opacity") {
+            if let Ok(v) = val.parse() { self.wallpapers_opacity = Some(v); }
+        }
         if let Some(val) = properties.get("window_namespace") {
             self.window_namespace = val.to_string();
         }
@@ -603,9 +618,8 @@ impl AppConfig {
             }
         }
 
-        // Parse power actions
         let mut power_entries: Vec<(&str, &str)> = properties.iter()
-            .filter(|(k, _)| k.starts_with("power_"))
+            .filter(|(k, _)| k.starts_with("power_") && **k != "power_opacity")
             .map(|(k, v)| (*k, *v))
             .collect();
         
@@ -661,14 +675,22 @@ impl AppConfig {
             String::new()
         };
 
+        let apps_op = self.apps_opacity.unwrap_or(self.background_opacity);
+        let power_op = self.power_opacity.unwrap_or(self.background_opacity);
+        let wall_op = self.wallpapers_opacity.unwrap_or(self.background_opacity);
+
         format!(
             "
-            .fullscreen-bg {{
-                background-color: alpha({bg}, {opacity});
+            .apps-window {{
+                background-color: alpha({bg}, {apps_op});
+            }}
+
+            .power-window {{
+                background-color: alpha({bg}, {power_op});
             }}
 
             .wallpaper-window {{
-                background-color: alpha({bg}, {opacity});
+                background-color: alpha({bg}, {wall_op});
                 border: {bw}px solid {bc};
                 border-radius: {br}px;
             }}
@@ -806,7 +828,6 @@ impl AppConfig {
             fsize = self.font_size,
             fg = self.text_color,
             sel = self.selection_color,
-            opacity = self.background_opacity,
             list_fg = self.list_text_color,
             hl = self.highlight_color,
             hlfg = self.highlight_text_color,
