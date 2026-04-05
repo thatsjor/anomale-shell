@@ -2,7 +2,7 @@ use gtk4::prelude::*;
 use gtk4::{Application, ApplicationWindow, Orientation, Align, Label};
 use gtk4::gdk_pixbuf::Pixbuf;
 use gtk4_layer_shell::{Layer, LayerShell, KeyboardMode};
-use crate::config::AppConfig;
+use crate::config::{AppConfig, Config};
 use std::rc::Rc;
 use std::cell::RefCell;
 use std::process::Command;
@@ -121,24 +121,23 @@ impl WallpaperMenu {
             .build();
 
         window.init_layer_shell();
-        window.set_namespace(&config.window_namespace);
+        window.set_namespace("anomale-wallpaper");
         window.set_layer(Layer::Overlay);
         window.set_keyboard_mode(KeyboardMode::OnDemand);
         window.set_exclusive_zone(-1);
         
         window.set_default_size(config.wallpapers_width, config.wallpapers_height);
 
-        let css = config.generate_css();
+        let css = config.generate_css(None);
         css_provider_ref.load_from_data(&css);
         let css_provider = css_provider_ref.clone();
-
-        window.add_css_class("wallpaper-window");
 
         let outer_box = gtk4::Box::builder()
             .orientation(Orientation::Vertical)
             .vexpand(true)
             .hexpand(true)
             .build();
+        outer_box.add_css_class("wallpaper-window");
 
         let title = Label::new(Some("Choose Your Wallpaper"));
         title.add_css_class("launcher-box");
@@ -286,11 +285,42 @@ impl WallpaperMenu {
             m.window.set_visible(false);
         } else {
             let config = AppConfig::load().unwrap_or_default();
-            m.css_provider.load_from_data(&config.generate_css());
+
+            // Find shadow config from bar configs by scanning monitors
+            let bar_shadow_config = Self::find_bar_shadow_config();
+            m.css_provider.load_from_data(&config.generate_css(bar_shadow_config.as_ref()));
 
             m.window.set_visible(true);
             m.populate_wallpapers(self_rc);
         }
+    }
+
+    /// Scan monitor bar configs to find the first one with shadow settings enabled.
+    fn find_bar_shadow_config() -> Option<Config> {
+        let display = gtk4::gdk::Display::default()?;
+        let monitors = display.monitors();
+        for i in 0..monitors.n_items() {
+            if let Some(monitor) = monitors.item(i).and_downcast::<gtk4::gdk::Monitor>() {
+                if let Some(name) = monitor.connector() {
+                    if let Ok(cfg) = Config::load(Some(name.as_str())) {
+                        let has_shadow = cfg.shadow_size > 0 || cfg.shadow_blur > 0
+                            || cfg.shadow_offset_x != 0 || cfg.shadow_offset_y != 0;
+                        if has_shadow {
+                            return Some(cfg);
+                        }
+                    }
+                }
+            }
+        }
+        // Fallback: try default config
+        if let Ok(cfg) = Config::load(None) {
+            let has_shadow = cfg.shadow_size > 0 || cfg.shadow_blur > 0
+                || cfg.shadow_offset_x != 0 || cfg.shadow_offset_y != 0;
+            if has_shadow {
+                return Some(cfg);
+            }
+        }
+        None
     }
 
     fn populate_wallpapers(&mut self, self_rc: &Rc<RefCell<Self>>) {

@@ -33,6 +33,12 @@ pub struct Config {
     pub volume_scroll_speed: f64,
     pub degree_symbol_font: Option<String>,
     pub charge_color: String,
+    pub shadow_size: i32,
+    pub shadow_blur: i32,
+    pub shadow_offset_x: i32,
+    pub shadow_offset_y: i32,
+    pub shadow_color: String,
+    pub shadow_opacity: f64,
 }
 
 impl Default for Config {
@@ -66,6 +72,12 @@ impl Default for Config {
             volume_scroll_speed: 5.0,
             degree_symbol_font: None,
             charge_color: "#00ff00ff".to_string(),
+            shadow_size: 0,
+            shadow_blur: 0,
+            shadow_offset_x: 0,
+            shadow_offset_y: 0,
+            shadow_color: "#00000040".to_string(),
+            shadow_opacity: 1.0,
         }
     }
 }
@@ -173,6 +185,37 @@ impl Config {
              }
         }
         value.to_string()
+    }
+
+    /// Apply an opacity multiplier (0.0–1.0) to a hex color string.
+    /// Handles #RGB, #RRGGBB, and #RRGGBBAA formats.
+    /// Returns #RRGGBBAA with alpha = existing_alpha * opacity.
+    pub fn apply_opacity_to_hex(hex: &str, opacity: f64) -> String {
+        let h = hex.trim_start_matches('#');
+        let (r, g, b, a) = match h.len() {
+            3 => {
+                let r = u8::from_str_radix(&h[0..1], 16).unwrap_or(0) * 17;
+                let g = u8::from_str_radix(&h[1..2], 16).unwrap_or(0) * 17;
+                let b = u8::from_str_radix(&h[2..3], 16).unwrap_or(0) * 17;
+                (r, g, b, 255u8)
+            }
+            6 => {
+                let r = u8::from_str_radix(&h[0..2], 16).unwrap_or(0);
+                let g = u8::from_str_radix(&h[2..4], 16).unwrap_or(0);
+                let b = u8::from_str_radix(&h[4..6], 16).unwrap_or(0);
+                (r, g, b, 255u8)
+            }
+            8 => {
+                let r = u8::from_str_radix(&h[0..2], 16).unwrap_or(0);
+                let g = u8::from_str_radix(&h[2..4], 16).unwrap_or(0);
+                let b = u8::from_str_radix(&h[4..6], 16).unwrap_or(0);
+                let a = u8::from_str_radix(&h[6..8], 16).unwrap_or(255);
+                (r, g, b, a)
+            }
+            _ => return hex.to_string(), // Can't parse, return as-is
+        };
+        let new_alpha = ((a as f64) * opacity.clamp(0.0, 1.0)).round() as u8;
+        format!("#{:02x}{:02x}{:02x}{:02x}", r, g, b, new_alpha)
     }
 
     fn apply_execs(&mut self, content: &str) {
@@ -302,6 +345,26 @@ impl Config {
         }
         if let Some(val) = properties.get("charge_color") {
             self.charge_color = Self::resolve_color(val, &pywal_colors);
+        }
+        if let Some(val) = properties.get("shadow_size") {
+            if let Ok(v) = val.parse() { self.shadow_size = v; }
+        }
+        if let Some(val) = properties.get("shadow_blur") {
+            if let Ok(v) = val.parse() { self.shadow_blur = v; }
+        }
+        if let Some(val) = properties.get("shadow_offset_x") {
+            if let Ok(v) = val.parse() { self.shadow_offset_x = v; }
+        }
+        if let Some(val) = properties.get("shadow_offset_y") {
+            if let Ok(v) = val.parse() { self.shadow_offset_y = v; }
+        }
+        if let Some(val) = properties.get("shadow_color") {
+            self.shadow_color = Self::resolve_color(val, &pywal_colors);
+        }
+        if let Some(val) = properties.get("shadow_opacity") {
+            if let Ok(v) = val.parse::<f64>() {
+                self.shadow_opacity = v.clamp(0.0, 1.0);
+            }
         }
     }
 }
@@ -570,7 +633,34 @@ impl AppConfig {
         if self.max_results_height < 50 { self.max_results_height = 50; }
     }
 
-    pub fn generate_css(&self) -> String {
+    pub fn generate_css(&self, bar_config: Option<&Config>) -> String {
+        // Generate wallpaper-window shadow CSS from bar config if available
+        let wallpaper_shadow_css = if let Some(bc) = bar_config {
+            let has_shadow = bc.shadow_size > 0 || bc.shadow_blur > 0
+                || bc.shadow_offset_x != 0 || bc.shadow_offset_y != 0;
+            if has_shadow {
+                let effective_color = Config::apply_opacity_to_hex(&bc.shadow_color, bc.shadow_opacity);
+                // Margin so the shadow has room to render inside the transparent window
+                let margin_top = 0i32.max(bc.shadow_size - bc.shadow_offset_y) + bc.shadow_blur;
+                let margin_bottom = 0i32.max(bc.shadow_size + bc.shadow_offset_y) + bc.shadow_blur;
+                let margin_left = 0i32.max(bc.shadow_size - bc.shadow_offset_x) + bc.shadow_blur;
+                let margin_right = 0i32.max(bc.shadow_size + bc.shadow_offset_x) + bc.shadow_blur;
+                format!(
+                    "\n            .wallpaper-window {{\n                box-shadow: {}px {}px {}px {}px {};\n                margin: {}px {}px {}px {}px;\n            }}",
+                    bc.shadow_offset_x,
+                    bc.shadow_offset_y,
+                    bc.shadow_blur,
+                    bc.shadow_size,
+                    effective_color,
+                    margin_top, margin_right, margin_bottom, margin_left
+                )
+            } else {
+                String::new()
+            }
+        } else {
+            String::new()
+        };
+
         format!(
             "
             .fullscreen-bg {{
@@ -705,6 +795,8 @@ impl AppConfig {
             .wallpaper-thumb.selected {{
                 background-color: {sel};
             }}
+
+            {wallpaper_shadow}
             ",
             bg = self.background_color,
             bw = self.border_width,
@@ -717,7 +809,8 @@ impl AppConfig {
             opacity = self.background_opacity,
             list_fg = self.list_text_color,
             hl = self.highlight_color,
-            hlfg = self.highlight_text_color
+            hlfg = self.highlight_text_color,
+            wallpaper_shadow = wallpaper_shadow_css
         )
     }
 }

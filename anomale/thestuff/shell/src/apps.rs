@@ -32,7 +32,7 @@ impl AppLauncher {
 
         // Layer Shell Setup - Full screen overlay
         window.init_layer_shell();
-        window.set_namespace(&config.window_namespace);
+        window.set_namespace("anomale-appmenu");
         window.set_layer(Layer::Overlay);
         window.set_keyboard_mode(KeyboardMode::OnDemand);
         window.set_exclusive_zone(-1); // Cover everything including the bar
@@ -44,7 +44,7 @@ impl AppLauncher {
         window.set_anchor(Edge::Right, true);
 
         // Apply CSS (Initial load)
-        let css = config.generate_css();
+        let css = config.generate_css(None);
         css_provider_ref.load_from_data(&css);
         let css_provider = css_provider_ref.clone();
 
@@ -270,7 +270,7 @@ impl AppLauncher {
         } else {
             // Refresh CSS from config (picks up pywal changes)
             let config = AppConfig::load().unwrap_or_default();
-            self.css_provider.load_from_data(&config.generate_css());
+            self.css_provider.load_from_data(&config.generate_css(None));
 
             // Refresh apps list
             *self.apps.borrow_mut() = gio::AppInfo::all();

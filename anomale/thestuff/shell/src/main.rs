@@ -103,7 +103,7 @@ fn setup_panic_hook() {
 
 fn refresh_menu_css(provider: &gtk4::CssProvider) {
     let menus_config = config::AppConfig::load().unwrap_or_default();
-    provider.load_from_data(&menus_config.generate_css());
+    provider.load_from_data(&menus_config.generate_css(None));
 }
 
 fn refresh_css(
@@ -291,7 +291,7 @@ async fn main() -> anyhow::Result<()> {
         let menu_css_provider = gtk4::CssProvider::new();
         // Load initial CSS
         let menus_config = config::AppConfig::load().unwrap_or_default();
-        menu_css_provider.load_from_data(&menus_config.generate_css());
+        menu_css_provider.load_from_data(&menus_config.generate_css(None));
         
         gtk4::style_context_add_provider_for_display(
             &gtk4::gdk::Display::default().expect("Could not get default display"),
