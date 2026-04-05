@@ -9,10 +9,7 @@ use std::process::Command;
 use std::path::PathBuf;
 use std::sync::{Arc, atomic::{AtomicU64, Ordering}};
 
-/// Helper to get the command for a specific wallpaper.
-/// It looks for a .txt file with the same stem as the wallpaper,
-/// and uses its content as the command template if found.
-/// Otherwise, it uses the default command.
+
 fn get_wallpaper_command(wall_path_str: &str, default_cmd: &str) -> String {
     let path = PathBuf::from(wall_path_str);
     if let Some(stem) = path.file_stem() {

@@ -33,34 +33,38 @@ echo -e "\033[0m"
 sleep 0.5
 
 cat << "EOF"
-Before we get started, It is important that you understand that this script 
-and the software and configuration it installs on your system are in very early stages 
-of development. Treat it as incomplete software, and expect bugs.
+Expanding on the philosophy that mangowm offers, anomale shell does **not** include 
+a suite of widgets and apps that create a complete desktop environment. 
+Instead, it provides a minimal, lightweight, and functional interface 
+that provides basic information and wallpaper chooser with 
+pywal theming for your minimalistic desktop. 
+New features will be added in the future, but the project 
+will always maintain that minimalistic philosophy that stays 
+out of the user's way and encourages the use of the terminal 
+rather than a complicated GUI. Users that are not comfortable working in 
+their terminal will likely not enjoy these dots.
 
-This shell is built to provide an EXTREMELY minimal experience for users
-that are comfortable working in their terminal. These are not your average dotfiles with 
-various widgets and menus that make a somewhat funcitonal Desktop Environment.
+While the Anomale Shell source code was included in the 
+repo, inside of the shell/ directory, the install script 
+is the primary way to install the shell, as it handles the building 
+of the binary, installation of any pre-requisites, and the 
+copying of configuration files that turn a tedious setup experience 
+into a simple 10-minute process.
 
-This shell and these dots appreciate the simplicity that mangowm provides its users, and expands 
-ever so slightly on that philosophy. 
+This Graphical Shell and the included dotfiles 
+are meant to be installed over a minimal 
+Arch Linux (Arch, CachyOS, EndeavourOS) installation with 
+no DE or display manager. (The script may work if used under 
+different conditions, but no promises. It requires yay or
+paru, or it will install yay for you.)
 
-This script should run smoothly on Arch (perfect), CachyOS (almost perfect, nothing you cant handle after the script runs), and EndeavourOS (perfect).
-The script is meant to be installed on top of Desktopless or Minimal OS installs, but may work regardless.
-However, it assumes you handle graphics drivers YOURSELF.
-
-This script installs the latest build of mangowm for you from the AUR, and does not have 
-any other pre-requisites. If you have neither yay nor paru installed prior to running this script, yay will be installed for you.
-
-These dots and this configuration are based on my personal preference and NOTHING more. My default mango bindings
-may not be to your liking. Anomale-specific bindings will be in a single section of the config file with brief explanations.
-
-If you understand this, and you're feeling brave, you may proceed...
+After considering all of this, you may proceed.
 EOF
 sleep 0.3
 
 #are you even ready?
 cat << "EOF"
-FEELING BRAVE?
+Are you Ready to Install Anomale Shell and Jor's Dots?
 EOF
 
 PS3="Choose (but don't be a coward): "
@@ -249,10 +253,5 @@ done
 clear
 
 cat << "EOF"
-The Script has completed successfully and you are very, very happy about it.
-
-Do yourself a favor and reboot your computer. 
-
-When you get back, you'll find that basic sddm theme. Its okay. You hate it, I hate it.
-We can hate it together.
+This is the end of the script. Please reboot your computer.
 EOF

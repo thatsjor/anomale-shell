@@ -31,10 +31,6 @@ pub fn spawn_watcher(paths: Vec<PathBuf>, sender: async_channel::Sender<()>) {
                     match event {
                         Ok(event) => {
                              
-                             // Basic debouncing
-                             // We are interested in Modify and Create (and maybe Remove? if file is replaced)
-                             
-                             // Filter for interesting files if watching directories
                              let mut interesting = false;
                              for path_buf in &event.paths {
                                  if let Some(name) = path_buf.file_name().and_then(|n| n.to_str()) {

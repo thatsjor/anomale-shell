@@ -402,8 +402,7 @@ async fn main() -> anyhow::Result<()> {
             }
         }
 
-        // Ensure the app is activated (launcher window shown, etc)
-        // This is important if starting up for the first time with args.
+
         app.activate();
         
         0 // Return status code 0

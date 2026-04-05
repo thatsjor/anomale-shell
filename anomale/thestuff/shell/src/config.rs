@@ -755,12 +755,6 @@ mod tests {
         writeln!(specific_file, "bar_height=20")?;
         writeln!(specific_file, "exec=LOCAL_EXEC")?;
         // bar_color not specified, should remain default (NOT global)
-
-        // Test 1: Load specific config
-        // monitor_name="HDMI-TEST"
-        // Should have GLOBAL exec + LOCAL exec
-        // bar_height should be 20
-        // bar_color should be default (#1e1e2e), NOT #000000
         
         let config = Config::load(Some("HDMI-TEST"))?;
         
@@ -770,12 +764,7 @@ mod tests {
         assert_ne!(config.bar_color, "#000000", "Specific config should NOT inherit global visual settings");
         assert_eq!(config.bar_color, "#1e1e2e", "Specific config should use defaults if missing");
 
-        // Test 2: Load non-existent specific config
-        // monitor_name="DP-TEST" (doesn't exist)
-        // Should fallback to config.conf for settings
-        // Should have GLOBAL exec
-        // bar_height should be 10
-        // bar_color should be #000000
+ 
         
         let config_fallback = Config::load(Some("DP-TEST"))?;
         

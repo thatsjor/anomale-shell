@@ -21,8 +21,6 @@ pub fn create_bar(app: &Application, monitor: &gtk4::gdk::Monitor, config: &Conf
     let position = config.position.as_deref().unwrap_or("top");
     let edge_distance = config.edge_distance.unwrap_or(0);
 
-    // If max_width is not set, we default to full width (left, right, top)
-    // If max_width IS set, we need to respect alignment
     
     // Vertical placement
     let vertical_edge = if position == "bottom" {
@@ -54,8 +52,6 @@ pub fn create_bar(app: &Application, monitor: &gtk4::gdk::Monitor, config: &Conf
         // Full width behavior
         window.set_anchor(gtk4_layer_shell::Edge::Left, true);
         window.set_anchor(gtk4_layer_shell::Edge::Right, true);
-        // Also set margins for side if it's full width, might be desired? 
-        // User only asked for edge_distance from the anchored edge (top/bottom), so we'll stick to that for now.
     }
 
     // Exclusive zone so windows don't overlap
@@ -111,9 +107,6 @@ pub fn generate_css(config: &Config, monitor_name: Option<&str>) -> String {
         let alpha = (opacity as f64 / 100.0 * 255.0) as u8;
         
         let hex = config.bar_color.trim_start_matches('#');
-        // If hex is 6 chars (RRGGBB), append alpha.
-        // If hex is 8 chars (RRGGBBAA), replace alpha.
-        // We'll treat it as RRGGBB if len <= 6, else assume RRGGBBAA and take first 6.
         let base_hex = if hex.len() >= 6 { &hex[0..6] } else { hex };
         
         format!("#{0}{1:02x}", base_hex, alpha)
