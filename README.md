@@ -1,6 +1,9 @@
 # ANOMALE SHELL
 
-<a href="https://www.youtube.com/watch?v=IXHZVE5SDYE" target='_blank'><img src='https://i.postimg.cc/4mVbN1HK/image-2.png' border='0' alt='image-2'></a>
+<a href="https://www.youtube.com/watch?v=IXHZVE5SDYE" target='_blank'><img src='
+https://i.postimg.cc/28XHGczx/image-2.png' border='0' alt='image-2'></a>
+
+https://i.postimg.cc/28XHGczx/image-2.png
 
 THIS PROJECT IS A PERSONAL PROJECT WITH SOFTWARE AND DOTFILES MADE FOR MYSELF. IT IS NOT INTENDED FOR PUBLIC USE, ALTHOUGH YOU ARE WELCOME TO USE IT IF YOU WISH.
 
