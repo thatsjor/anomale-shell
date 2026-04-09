@@ -11,6 +11,13 @@ use pulse::context::{Context, FlagSet as ContextFlagSet};
 use pulse::context::subscribe::InterestMaskSet;
 use pulse::volume::Volume;
 
+#[derive(Debug, Clone, Copy)]
+struct VolumeUpdate {
+    volume: f64,
+    muted: bool,
+}
+
+
 pub fn build(scroll_speed: f64) -> GtkBox {
     let container = GtkBox::new(Orientation::Horizontal, 0);
     container.add_css_class("volume-module");
@@ -71,37 +78,58 @@ pub fn build(scroll_speed: f64) -> GtkBox {
     });
 
     let local_vol = Rc::new(std::cell::Cell::new(0.0f64));
+    let local_muted = Rc::new(std::cell::Cell::new(false));
 
     let val_label_clone = val_label.clone();
     let local_vol_clone_ui = local_vol.clone();
-    let update_ui = Rc::new(move |vol: Option<f64>| {
-        if let Some(v) = vol {
-            local_vol_clone_ui.set(v);
-            let v_display = (v * 100.0).round() as u32;
-            val_label_clone.set_text(&format!("[{:03}]", v_display));
+    let local_muted_clone_ui = local_muted.clone();
+
+    let update_ui = Rc::new(move |update: Option<VolumeUpdate>| {
+        if let Some(upd) = update {
+            local_vol_clone_ui.set(upd.volume);
+            local_muted_clone_ui.set(upd.muted);
+
+            if upd.muted {
+                val_label_clone.set_text("[xx]");
+            } else if upd.volume >= 1.0 {
+                val_label_clone.set_text("[!!]");
+            } else {
+                let v_display = (upd.volume * 100.0).round() as u32;
+                val_label_clone.set_text(&format!("[{:02}]", v_display));
+            }
         } else {
             val_label_clone.set_text("[ERR]");
         }
     });
 
+
     let (set_vol_tx, set_vol_rx) = mpsc::channel::<f64>();
 
     if let Ok(mut c) = SinkController::create() {
         if let Ok(dev) = c.get_default_device() {
-            update_ui(Some(dev.volume.avg().0 as f64 / Volume::NORMAL.0 as f64));
+            update_ui(Some(VolumeUpdate {
+                volume: dev.volume.avg().0 as f64 / Volume::NORMAL.0 as f64,
+                muted: dev.mute,
+            }));
         }
     }
 
+
     let adjust_vol = {
         let local_vol = local_vol.clone();
+        let local_muted = local_muted.clone();
         let update_ui = update_ui.clone();
         let set_vol_tx = set_vol_tx.clone();
         move |delta: f64| {
             let new_vol = (local_vol.get() + delta).clamp(0.0, 1.0);
-            update_ui(Some(new_vol));
+            update_ui(Some(VolumeUpdate {
+                volume: new_vol,
+                muted: local_muted.get(),
+            }));
             let _ = set_vol_tx.send(new_vol);
         }
     };
+
 
     // --- Interaction Handlers ---
 
@@ -161,8 +189,12 @@ pub fn build(scroll_speed: f64) -> GtkBox {
 
         if let Ok(default_device) = controller.get_default_device() {
              let v = default_device.volume.avg().0 as f64 / Volume::NORMAL.0 as f64;
-             let _ = sender.send_blocking(Some(v));
+             let _ = sender.send_blocking(Some(VolumeUpdate {
+                 volume: v,
+                 muted: default_device.mute,
+             }));
         }
+
 
         let mut mainloop = match Mainloop::new() {
             Some(m) => m,
@@ -233,8 +265,12 @@ pub fn build(scroll_speed: f64) -> GtkBox {
                  
                  if let Ok(default_device) = controller.get_default_device() {
                      let v = default_device.volume.avg().0 as f64 / Volume::NORMAL.0 as f64;
-                     let _ = sender.send_blocking(Some(v));
+                     let _ = sender.send_blocking(Some(VolumeUpdate {
+                         volume: v,
+                         muted: default_device.mute,
+                     }));
                  }
+
             }
             
             std::thread::sleep(std::time::Duration::from_millis(15));
@@ -242,9 +278,10 @@ pub fn build(scroll_speed: f64) -> GtkBox {
     });
 
     gtk4::glib::MainContext::default().spawn_local(async move {
-        while let Ok(vol) = receiver.recv().await {
-            update_ui(vol);
+        while let Ok(update) = receiver.recv().await {
+            update_ui(update);
         }
+
     });
 
     container.connect_destroy(move |_| {
