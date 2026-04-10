@@ -243,13 +243,12 @@ do
     case $opt in
         "YES")
             echo "Installing SDDM (you'll have to configure/theme it yourself)"
-            sudo pacman -S sddm
+            sudo pacman -S sddm qt5-graphicaleffects qt5-quickcontrols2 qt5-svg
             sudo systemctl enable sddm
             sudo systemctl set-default graphical.target
             sudo cp -r "$THE_STUFF/anomalous" /usr/share/sddm/themes/
             sudo cp "$THE_STUFF/etc/sddm.conf" /etc/sddm.conf
             sudo chown -R $USER:$USER /usr/share/sddm/themes/anomalous
-            sudo pacman -S qt5-graphicaleffects qt5-quickcontrols2 qt5-svg
             break 
             ;;
         "NO")
