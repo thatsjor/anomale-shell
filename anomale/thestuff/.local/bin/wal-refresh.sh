@@ -12,3 +12,7 @@ sleep 0.3
 systemctl --user start xdg-desktop-portal xdg-desktop-portal-gtk xdg-desktop-portal-wlr
 thunar --daemon &
 disown
+
+cp "$HOME/.cache/wal/sddm.conf" "/usr/share/sddm/themes/anomalous/theme.conf"
+
+cp "$(< "$HOME/.cache/wal/wal")" "/usr/share/sddm/themes/anomalous/background.jpg"

@@ -173,6 +173,10 @@ cp -r "$THE_STUFF/.local/bin/." ~/.local/bin/
 
 chmod +x ~/.local/bin/*
 
+#set terminal
+fish -c "set -Ux TERMINAL foot"
+
+
 #gtk pywal symlinks
 rm -f ~/.config/gtk-4.0/gtk.css
 rm -f ~/.config/gtk-4.0/gtk-dark.css
@@ -226,6 +230,9 @@ clear
 
 cat << "EOF"
 Would you like SDDM?
+
+It will be installed with a theme that will 
+continuously change with your previosly set wallpaper.
 EOF
 
 PS3="Choose: "
@@ -239,6 +246,10 @@ do
             sudo pacman -S sddm
             sudo systemctl enable sddm
             sudo systemctl set-default graphical.target
+            sudo cp -r "$THE_STUFF/anomalous" /usr/share/sddm/themes/
+            sudo cp "$THE_STUFF/etc/sddm.conf" /etc/sddm.conf
+            sudo chown -R $USER:$USER /usr/share/sddm/themes/anomalous
+            sudo pacman -S qt5-graphicaleffects qt5-quickcontrols2 qt5-svg
             break 
             ;;
         "NO")
