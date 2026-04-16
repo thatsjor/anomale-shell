@@ -115,7 +115,7 @@ do
     case $opt in
         "I HAVE YAY")
             echo "You have yay, so the script will use that."
-            yay -S --needed - < "$THE_STUFF/aurlist.txt"
+            yay -S --needed --noconfirm --combinedupgrade --noprovide - < "$THE_STUFF/aurlist.txt"
             sleep 1
             break 
             ;;
@@ -131,7 +131,7 @@ do
             git clone https://aur.archlinux.org/yay.git
             cd yay
             makepkg -si
-            yay -S --needed - < "$THE_STUFF/aurlist.txt"
+            yay -S --needed --noconfirm --combinedupgrade --noprovide - < "$THE_STUFF/aurlist.txt"
             cd ..
             rm -rf yay/
             break
