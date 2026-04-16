@@ -131,9 +131,9 @@ do
             git clone https://aur.archlinux.org/yay.git
             cd yay
             makepkg -si
-            cd ~
-            rm -rf ~/yay
             yay -S --needed - < "$THE_STUFF/aurlist.txt"
+            cd ..
+            rm -rf yay/
             break
             ;;
         *) 
