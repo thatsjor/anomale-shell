@@ -836,6 +836,237 @@ impl AppConfig {
     }
 }
 
+
+#[derive(Debug, Clone)]
+pub struct NotifyConfig {
+    pub width: i32,
+    pub height: i32,
+    pub margin: i32,
+    pub spacing: i32,
+    pub corner: String,
+    pub timeout: i32,
+    pub pywal: bool,
+    pub background_color: String,
+    pub background_opacity: f64,
+    pub border_color: String,
+    pub border_width: i32,
+    pub border_radius: i32,
+    pub text_color: String,
+    pub font_family: String,
+    pub font_size: f64,
+}
+
+impl Default for NotifyConfig {
+    fn default() -> Self {
+        Self {
+            width: 350,
+            height: 100,
+            margin: 20,
+            spacing: 10,
+            corner: "bottom-right".to_string(),
+            timeout: 2,
+            pywal: false,
+            background_color: "#1e1e2eff".to_string(),
+            background_opacity: 0.9,
+            border_color: "#cba6f7ff".to_string(),
+            border_width: 2,
+            border_radius: 12,
+            text_color: "#cdd6f4ff".to_string(),
+            font_family: "Sans".to_string(),
+            font_size: 12.0,
+        }
+    }
+}
+
+impl NotifyConfig {
+    pub fn load() -> Result<Self> {
+        let mut config = Self::default();
+
+        let xdg_config = std::env::var("XDG_CONFIG_HOME")
+            .map(PathBuf::from)
+            .or_else(|_| {
+                std::env::var("HOME")
+                    .map(|home| PathBuf::from(home).join(".config"))
+            })
+            .context("Could not determine config directory")?;
+        
+        let config_path = xdg_config.join("anomale").join("notifications.conf");
+
+        if config_path.exists() {
+            let content = fs::read_to_string(&config_path)?;
+            config.apply_all(&content);
+            return Ok(config);
+        }
+
+        let local_path = PathBuf::from("notifications.conf");
+        if local_path.exists() {
+             let content = fs::read_to_string(&local_path)?;
+             config.apply_all(&content);
+             return Ok(config);
+        }
+
+        Ok(config)
+    }
+
+    fn apply_all(&mut self, content: &str) {
+        let mut properties = HashMap::new();
+
+        for line in content.lines() {
+            let line = line.trim();
+            if line.is_empty() || line.starts_with('#') {
+                continue;
+            }
+            if let Some((key, value)) = line.split_once('=') {
+                // Strip inline comments (e.g. "bottom-left # options...")
+                let value = value.split('#').next().unwrap_or("").trim();
+                properties.insert(key.trim(), value);
+            }
+        }
+
+        if let Some(val) = properties.get("pywal") {
+            self.pywal = val.eq_ignore_ascii_case("true");
+        } else {
+            for value in properties.values() {
+                if value.contains("pywal_") {
+                    self.pywal = true;
+                    break;
+                }
+            }
+        }
+
+        let pywal_colors = if self.pywal {
+            Config::load_pywal_colors()
+        } else {
+            None
+        };
+
+        if let Some(val) = properties.get("width") {
+            if let Ok(v) = val.parse() { self.width = v; }
+        }
+        if let Some(val) = properties.get("height") {
+            if let Ok(v) = val.parse() { self.height = v; }
+        }
+        if let Some(val) = properties.get("margin") {
+            if let Ok(v) = val.parse() { self.margin = v; }
+        }
+        if let Some(val) = properties.get("spacing") {
+            if let Ok(v) = val.parse() { self.spacing = v; }
+        }
+        if let Some(val) = properties.get("corner") {
+            self.corner = val.to_string();
+        }
+        if let Some(val) = properties.get("timeout") {
+            if let Ok(v) = val.parse() { self.timeout = v; }
+        }
+        if let Some(val) = properties.get("background_color") {
+            self.background_color = Config::resolve_color(val, &pywal_colors);
+        }
+        if let Some(val) = properties.get("background_opacity") {
+            if let Ok(v) = val.parse() { self.background_opacity = v; }
+        }
+        if let Some(val) = properties.get("border_color") {
+            self.border_color = Config::resolve_color(val, &pywal_colors);
+        }
+        if let Some(val) = properties.get("border_width") {
+            if let Ok(v) = val.parse() { self.border_width = v; }
+        }
+        if let Some(val) = properties.get("border_radius") {
+            if let Ok(v) = val.parse() { self.border_radius = v; }
+        }
+        if let Some(val) = properties.get("text_color") {
+            self.text_color = Config::resolve_color(val, &pywal_colors);
+        }
+        if let Some(val) = properties.get("font_family") {
+            self.font_family = val.to_string();
+        }
+        if let Some(val) = properties.get("font_size") {
+            if let Ok(v) = val.parse() { self.font_size = v; }
+        }
+    }
+
+    pub fn generate_css(&self) -> String {
+        let bg_hex = self.background_color.trim_start_matches('#');
+        let (r, g, b) = if bg_hex.len() >= 6 {
+            (
+                u32::from_str_radix(&bg_hex[0..2], 16).unwrap_or(0),
+                u32::from_str_radix(&bg_hex[2..4], 16).unwrap_or(0),
+                u32::from_str_radix(&bg_hex[4..6], 16).unwrap_or(0),
+            )
+        } else {
+            (0, 0, 0)
+        };
+
+        // Convert any hex color to rgba() format that GTK4's CSS engine reliably handles.
+        // #RRGGBBAA is not well-supported; rgba() always works.
+        let to_rgba = |hex: &str| -> String {
+            let h = hex.trim_start_matches('#');
+            match h.len() {
+                6 => {
+                    let rv = u8::from_str_radix(&h[0..2], 16).unwrap_or(0);
+                    let gv = u8::from_str_radix(&h[2..4], 16).unwrap_or(0);
+                    let bv = u8::from_str_radix(&h[4..6], 16).unwrap_or(0);
+                    format!("rgba({}, {}, {}, 1.0)", rv, gv, bv)
+                }
+                8 => {
+                    let rv = u8::from_str_radix(&h[0..2], 16).unwrap_or(0);
+                    let gv = u8::from_str_radix(&h[2..4], 16).unwrap_or(0);
+                    let bv = u8::from_str_radix(&h[4..6], 16).unwrap_or(0);
+                    let av = u8::from_str_radix(&h[6..8], 16).unwrap_or(255);
+                    format!("rgba({}, {}, {}, {})", rv, gv, bv, av as f64 / 255.0)
+                }
+                _ => hex.to_string(),
+            }
+        };
+
+        format!(
+            "
+            .anomale-notification-window {{
+                background-color: transparent;
+            }}
+
+            .notification-window {{
+                background-color: rgba({r}, {g}, {b}, {opacity});
+                border: {bw}px solid {bc};
+                border-radius: {br}px;
+                color: {fg};
+                font-family: '{font}';
+                font-size: {fsize}px;
+                padding: 15px;
+            }}
+
+            .notification-summary {{
+                font-weight: bold;
+                font-size: {summary_size}px;
+                margin-bottom: 2px;
+            }}
+
+            .notification-app-name {{
+                font-size: {app_size}px;
+                opacity: 0.6;
+                font-weight: bold;
+                margin-bottom: 5px;
+            }}
+
+            .notification-body {{
+                opacity: 0.9;
+            }}
+            ",
+            r = r,
+            g = g,
+            b = b,
+            opacity = self.background_opacity,
+            bw = self.border_width,
+            bc = to_rgba(&self.border_color),
+            br = self.border_radius,
+            fg = to_rgba(&self.text_color),
+            font = self.font_family,
+            fsize = self.font_size,
+            summary_size = self.font_size + 2.0,
+            app_size = self.font_size - 2.0,
+        )
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -10,6 +10,9 @@ mod watcher;
 mod apps;
 mod power;
 mod wallpapers;
+mod notify;
+mod notify_server;
+mod notification_window;
 
 use config::Config;
 use std::rc::Rc;
@@ -341,6 +344,70 @@ async fn main() -> anyhow::Result<()> {
              }
              *should_show_wallpapers_store_activate.borrow_mut() = false;
         }
+
+        // Initialize Notification System
+        let (dbus_to_gtk_tx, dbus_to_gtk_rx) = async_channel::unbounded();
+        let (gtk_to_dbus_tx, gtk_to_dbus_rx) = async_channel::unbounded();
+        
+        let notify_manager = notify::NotifyManager::new(app, gtk_to_dbus_tx);
+
+        let server = notify_server::NotificationServer {
+            events_tx: dbus_to_gtk_tx,
+        };
+
+        // Spawn DBus server in tokio task
+        tokio::spawn(async move {
+            let conn_res = zbus::connection::Builder::session()
+                .unwrap_or_else(|e| {
+                    eprintln!("Failed to connect to session bus: {}", e);
+                    panic!("DBus fail");
+                })
+                .name("org.freedesktop.Notifications")
+                .expect("Failed to set DBus name (is another daemon running?)")
+                .serve_at("/org/freedesktop/Notifications", server)
+                .expect("Failed to serve notification object")
+                .build()
+                .await;
+
+            if let Ok(conn) = conn_res {
+                println!("Notification service registered");
+                
+                // Handle signals from GTK thread
+                while let Ok(event) = gtk_to_dbus_rx.recv().await {
+                    match event {
+                        notify_server::NotifyEvent::ActionInvoked(id, key) => {
+                            let _ = conn.emit_signal(
+                                None::<&str>,
+                                "/org/freedesktop/Notifications",
+                                "org.freedesktop.Notifications",
+                                "ActionInvoked",
+                                &(id, key),
+                            ).await;
+                        }
+                        notify_server::NotifyEvent::NotificationClosed(id, reason) => {
+                            let _ = conn.emit_signal(
+                                None::<&str>,
+                                "/org/freedesktop/Notifications",
+                                "org.freedesktop.Notifications",
+                                "NotificationClosed",
+                                &(id, reason),
+                            ).await;
+                        }
+                        _ => {}
+                    }
+                }
+            } else if let Err(e) = conn_res {
+                eprintln!("Notification service error: {}", e);
+            }
+        });
+
+        // Bridge DBus events to GTK thread
+        let notify_manager_clone = notify_manager.clone();
+        gtk4::glib::MainContext::default().spawn_local(async move {
+            while let Ok(event) = dbus_to_gtk_rx.recv().await {
+                notify_manager_clone.handle_event(event);
+            }
+        });
 
     });
 

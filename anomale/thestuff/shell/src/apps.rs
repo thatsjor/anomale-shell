@@ -385,24 +385,20 @@ impl AppLauncher {
             let label = Label::new(Some(&app.name()));
             label.set_ellipsize(gtk4::pango::EllipsizeMode::End);
             label.set_hexpand(true);
-            label.set_width_chars(1); // Allow shrinking below natural width
+            label.set_width_chars(1); 
             label.set_xalign(0.0);
             row_box.append(&label);
             
             row.set_child(Some(&row_box));
             
-            // NO unsafe set_data!
 
             self.list_box.append(&row);
         }
 
-        // Update the stored matches to sync with the ListBox
         *self.current_matches.borrow_mut() = row_matches;
         
-        // Let scrolled window expand to fill remaining space
         self.scrolled_window.set_size_request(-1, -1);
 
-        // Auto-select first row if matches found
         if let Some(row) = self.list_box.first_child() {
              if let Some(row_widget) = row.downcast_ref::<ListBoxRow>() {
                   self.list_box.select_row(Some(row_widget));
