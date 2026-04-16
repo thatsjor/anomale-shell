@@ -80,14 +80,6 @@ impl NotificationWindow {
             .valign(Align::Center)
             .build();
 
-        if !app_name.is_empty() {
-            let app_label = Label::builder()
-                .label(app_name)
-                .halign(Align::Start)
-                .build();
-            app_label.add_css_class("notification-app-name");
-            text_box.append(&app_label);
-        }
 
         let summary_label = Label::builder()
             .label(summary)

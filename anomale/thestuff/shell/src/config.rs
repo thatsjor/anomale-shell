@@ -1040,12 +1040,6 @@ impl NotifyConfig {
                 margin-bottom: 2px;
             }}
 
-            .notification-app-name {{
-                font-size: {app_size}px;
-                opacity: 0.6;
-                font-weight: bold;
-                margin-bottom: 5px;
-            }}
 
             .notification-body {{
                 opacity: 0.9;
@@ -1062,7 +1056,6 @@ impl NotifyConfig {
             font = self.font_family,
             fsize = self.font_size,
             summary_size = self.font_size + 2.0,
-            app_size = self.font_size - 2.0,
         )
     }
 }
