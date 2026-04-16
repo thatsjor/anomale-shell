@@ -149,9 +149,6 @@ fish -c "fish_add_path ~/.local/bin/"
 #Required to build anomale
 rustup default stable
 
-#create anomale directory
-mkdir "$THE_STUFF/shell/"
-
 #build anomale from source, and copy the binary to ~/.local/bin/ & make executable.
 (cd "$THE_STUFF/shell/" && cargo build --release)
 mkdir -p ~/.local/bin/
