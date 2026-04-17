@@ -108,7 +108,7 @@ Howevever, this script must do a few things differently depending on your OS's d
 EOF
 
 PS3="Choose: "
-options=("I HAVE YAY" "I HAVE PARU" "PLEASE INSTALL YAY FOR ME")
+options=("I HAVE YAY" "I HAVE PARU" "PLEASE INSTALL PARU FOR ME")
 
 select opt in "${options[@]}"
 do
@@ -121,19 +121,19 @@ do
             ;;
         "I HAVE PARU")
             echo "You have paru, so the script will use that."
-            xargs -a "$THE_STUFF/aurlist.txt" paru -S --needed --skipreview
+            xargs -a "$THE_STUFF/aurlist.txt" paru -S --needed --skipreview --noconfirm --sudoloop
             sleep 1
             break 
             ;;
-        "PLEASE INSTALL YAY FOR ME")
-            echo "You don't have either, so the script will install yay for you and use that."
+        "PLEASE INSTALL PARU FOR ME")
+            echo "You don't have either, so the script will install paru for you and use that."
             sudo pacman -S --needed git base-devel
-            git clone https://aur.archlinux.org/yay.git
-            cd yay
+            git clone https://aur.archlinux.org/paru-bin.git
+            cd paru-bin
             makepkg -si
-            yay -S --needed --noconfirm --combinedupgrade - < "$THE_STUFF/aurlist.txt"
+            paru -S --needed --noconfirm --skipreview --sudoloop - < "$THE_STUFF/aurlist.txt"
             cd ..
-            rm -rf yay/
+            rm -rf paru-bin/
             break
             ;;
         *) 
