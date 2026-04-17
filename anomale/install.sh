@@ -128,12 +128,12 @@ do
         "PLEASE INSTALL PARU FOR ME")
             echo "You don't have either, so the script will install paru for you and use that."
             sudo pacman -S --needed git base-devel
-            git clone https://aur.archlinux.org/paru-bin.git
-            cd paru-bin
+            git clone https://aur.archlinux.org/paru.git
+            cd paru
             makepkg -si
             paru -S --needed --noconfirm --skipreview --sudoloop - < "$THE_STUFF/aurlist.txt"
             cd ..
-            rm -rf paru-bin/
+            rm -rf paru/
             break
             ;;
         *) 
