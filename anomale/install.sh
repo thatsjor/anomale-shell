@@ -111,7 +111,7 @@ Howevever, this script must do a few things differently depending on your OS's d
 EOF
 
 PS3="Choose: "
-options=("I HAVE YAY" "I HAVE PARU" "PLEASE INSTALL PARU FOR ME")
+options=("I HAVE YAY" "I HAVE PARU" "PLEASE INSTALL YAY FOR ME")
 
 select opt in "${options[@]}"
 do
