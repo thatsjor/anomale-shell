@@ -96,9 +96,6 @@ echo "This script requires sudo for various commands during setup. You may be as
 sleep 3
 sudo -v 
 
-echo "Temporarily preferring IPv4 to prevent AUR timeouts..."
-sudo sed -i 's/^#precedence ::ffff:0:0\/96  100/precedence ::ffff:0:0\/96  100/' /etc/gai.conf
-
 clear
 cat << "EOF"
 These Dots should work well on Arch Linux, EndeavourOS, and CachyOS.
@@ -118,12 +115,14 @@ do
     case $opt in
         "I HAVE YAY")
             echo "You have yay, so the script will use that."
+            git config --global http.version HTTP/1.1
             yay -S --needed --noconfirm --combinedupgrade - < "$THE_STUFF/aurlist.txt"
             sleep 1
             break 
             ;;
         "I HAVE PARU")
             echo "You have paru, so the script will use that."
+            git config --global http.version HTTP/1.1
             xargs -a "$THE_STUFF/aurlist.txt" paru -S --needed --skipreview --noconfirm --sudoloop
             sleep 1
             break 
@@ -131,6 +130,7 @@ do
         "PLEASE INSTALL YAY FOR ME")
             echo "You don't have either, so the script will install yay for you and use that."
             sudo pacman -S --needed git base-devel
+            git config --global http.version HTTP/1.1
             git clone https://aur.archlinux.org/yay.git
             cd yay
             makepkg -si
@@ -261,10 +261,7 @@ do
     esac
 done
 clear
-
-echo "Restoring default IPv6 settings..."
-sudo sed -i 's/^precedence ::ffff:0:0\/96  100/#precedence ::ffff:0:0\/96  100/' /etc/gai.conf
-
+git config --global --unset http.version
 cat << "EOF"
 This is the end of the script. Please reboot your computer.
 EOF
