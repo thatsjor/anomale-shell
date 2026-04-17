@@ -96,6 +96,9 @@ echo "This script requires sudo for various commands during setup. You may be as
 sleep 3
 sudo -v 
 
+echo "Temporarily preferring IPv4 to prevent AUR timeouts..."
+sudo sed -i 's/^#precedence ::ffff:0:0\/96  100/precedence ::ffff:0:0\/96  100/' /etc/gai.conf
+
 clear
 cat << "EOF"
 These Dots should work well on Arch Linux, EndeavourOS, and CachyOS.
@@ -125,15 +128,15 @@ do
             sleep 1
             break 
             ;;
-        "PLEASE INSTALL PARU FOR ME")
-            echo "You don't have either, so the script will install paru for you and use that."
+        "PLEASE INSTALL YAY FOR ME")
+            echo "You don't have either, so the script will install yay for you and use that."
             sudo pacman -S --needed git base-devel
-            git clone https://aur.archlinux.org/paru.git
-            cd paru
+            git clone https://aur.archlinux.org/yay.git
+            cd yay
             makepkg -si
-            paru -S --needed --noconfirm --skipreview --sudoloop - < "$THE_STUFF/aurlist.txt"
+            yay -S --needed --noconfirm --combinedupgrade - < "$THE_STUFF/aurlist.txt"
             cd ..
-            rm -rf paru/
+            rm -rf yay/ 
             break
             ;;
         *) 
@@ -258,6 +261,9 @@ do
     esac
 done
 clear
+
+echo "Restoring default IPv6 settings..."
+sudo sed -i 's/^precedence ::ffff:0:0\/96  100/#precedence ::ffff:0:0\/96  100/' /etc/gai.conf
 
 cat << "EOF"
 This is the end of the script. Please reboot your computer.
