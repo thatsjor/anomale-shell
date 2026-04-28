@@ -172,7 +172,10 @@ mkdir -p ~/.local/bin/
 cp -r "$THE_STUFF/.local/bin/." ~/.local/bin/
 
 (cd "$THE_STUFF" && git clone https://github.com/thatsjor/oh_please.git)
-cp "$THE_STUFF/oh_please/opls" ~/.local/bin/opls
+sudo cp "$THE_STUFF/oh_please/opls" /usr/local/bin/opls
+sudo chmod +x /usr/local/bin/opls
+sudo cp "$THE_STUFF/oh_please/opls.desktop" /usr/share/applications/opls.desktop
+sudo update-desktop-database
 
 chmod +x ~/.local/bin/*
 
@@ -266,7 +269,7 @@ done
 clear
 
 if [ -f "/usr/share/systemd/bootctl/splash-arch.bmp" ]; then
-    rm -f /usr/share/systemd/bootctl/splash-arch.bmp
+    sudo rm -f /usr/share/systemd/bootctl/splash-arch.bmp
     sudo cp "$THE_STUFF/linux.bmp" /usr/share/systemd/bootctl/splash-arch.bmp
     sudo mkinitcpio -P
 fi
