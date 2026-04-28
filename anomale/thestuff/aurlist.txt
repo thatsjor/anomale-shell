@@ -44,3 +44,5 @@ xl2tpd
 zram-generator
 fzf
 nano
+wifitui
+bluetui
