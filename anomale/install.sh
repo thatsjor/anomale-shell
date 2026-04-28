@@ -171,6 +171,9 @@ cp -r "$THE_STUFF/.config/." ~/.config/
 mkdir -p ~/.local/bin/
 cp -r "$THE_STUFF/.local/bin/." ~/.local/bin/
 
+(cd "$THE_STUFF" && git clone https://github.com/thatsjor/oh_please.git)
+cp "$THE_STUFF/oh_please/opls" ~/.local/bin/opls
+
 chmod +x ~/.local/bin/*
 
 #set terminal
