@@ -1,15 +1,15 @@
 /* --- PYWAL-GTK3/4 COMPREHENSIVE THEME --- */
 
 /* Primary Palette Mapping */
-@define-color bg_color #0e1c21;
-@define-color fg_color #c2c6c7;
-@define-color base_color #0e1c21;
-@define-color text_color #c2c6c7;
-@define-color selected_bg_color #7998a9;
-@define-color selected_fg_color #0e1c21; 
-@define-color accent_color #7998a9;
-@define-color accent_bg_color #7998a9;
-@define-color accent_fg_color #0e1c21;
+@define-color bg_color #20200e;
+@define-color fg_color #c7c7c2;
+@define-color base_color #20200e;
+@define-color text_color #c7c7c2;
+@define-color selected_bg_color #a4a98a;
+@define-color selected_fg_color #20200e; 
+@define-color accent_color #a4a98a;
+@define-color accent_bg_color #a4a98a;
+@define-color accent_fg_color #20200e;
 
 /* Modern Libadwaita & GTK4 Compatibility */
 @define-color window_bg_color @bg_color;
@@ -28,7 +28,7 @@
 /* --- GLOBAL UI & DIALOG CLEANUP --- */
 * {
     outline-width: 0;
-    -gtk-secondary-caret-color: #7998a9;
+    -gtk-secondary-caret-color: #a4a98a;
 }
 
 window.dialog, 
@@ -41,7 +41,7 @@ messagedialog {
 
 decoration {
     box-shadow: 0 4px 12px rgba(0,0,0,0.5); 
-    border: 1px solid alpha(#c2c6c7, 0.1);
+    border: 1px solid alpha(#c7c7c2, 0.1);
     margin: 0;
 }
 
@@ -55,13 +55,13 @@ messagedialog headerbar {
     background-color: @bg_color;
     color: @fg_color;
     box-shadow: none;
-    border-bottom: 1px solid alpha(#c2c6c7, 0.1);
+    border-bottom: 1px solid alpha(#c7c7c2, 0.1);
 }
 
 headerbar button, 
 .titlebar button {
-    background-color: alpha(#c2c6c7, 0.05);
-    border: 1px solid alpha(#c2c6c7, 0.1);
+    background-color: alpha(#c7c7c2, 0.05);
+    border: 1px solid alpha(#c7c7c2, 0.1);
     color: @fg_color;
     border-radius: 4px;
 }
@@ -90,14 +90,14 @@ placessidebar row.sidebar-new-row-style {
 
 .sidebar row:selected, 
 placessidebar row:selected {
-    background-color: #7998a9;
-    color: #0e1c21;
+    background-color: #a4a98a;
+    color: #20200e;
     transition: all 150ms ease;
 }
 
 .sidebar row:hover, 
 placessidebar row:hover {
-    background-color: alpha(#c2c6c7, 0.08);
+    background-color: alpha(#c7c7c2, 0.08);
 }
 
 /* Fix for sidebar buttons/icons */
@@ -120,15 +120,15 @@ treeview:selected,
 .view:selected:focus, 
 iconview:selected:focus,
 treeview:selected:focus {
-    background-color: #7998a9;
-    color: #0e1c21;
+    background-color: #a4a98a;
+    color: #20200e;
     border-radius: 4px;
 }
 
 /* Selection Rectangle */
 rubberband, .rubberband {
-    background-color: alpha(#7998a9, 0.3);
-    border: 1px solid #7998a9;
+    background-color: alpha(#a4a98a, 0.3);
+    border: 1px solid #a4a98a;
 }
 
 /* --- PATH BAR & BREADCRUMBS --- */
@@ -139,7 +139,7 @@ rubberband, .rubberband {
 
 .path-bar button {
     background-image: none;
-    background-color: alpha(#c2c6c7, 0.05);
+    background-color: alpha(#c7c7c2, 0.05);
     border: 1px solid transparent;
     margin: 0 2px;
     border-radius: 4px;
@@ -147,25 +147,25 @@ rubberband, .rubberband {
 }
 
 .path-bar button:checked {
-    background-color: #7998a9;
-    color: #0e1c21;
+    background-color: #a4a98a;
+    color: #20200e;
 }
 
 .path-bar button:hover {
-    background-color: alpha(#7998a9, 0.2);
+    background-color: alpha(#a4a98a, 0.2);
 }
 
 /* --- ACTION AREA (Bottom of File Picker) --- */
 .file-chooser .dialog-action-area {
     background-color: @bg_color;
     padding: 12px;
-    border-top: 1px solid alpha(#c2c6c7, 0.1);
+    border-top: 1px solid alpha(#c7c7c2, 0.1);
 }
 
 /* Highlight the 'Open' or 'Save' button */
 .file-chooser .dialog-action-area button.suggested-action {
-    background-color: #7998a9;
-    color: #0e1c21;
+    background-color: #a4a98a;
+    color: #20200e;
     border: none;
     font-weight: bold;
 }
@@ -176,7 +176,7 @@ scrollbar {
 }
 
 scrollbar slider {
-    background-color: alpha(#c2c6c7, 0.2);
+    background-color: alpha(#c7c7c2, 0.2);
     border-radius: 20px;
     min-width: 6px;
     min-height: 6px;
@@ -184,19 +184,19 @@ scrollbar slider {
 }
 
 scrollbar slider:hover {
-    background-color: alpha(#7998a9, 0.8);
+    background-color: alpha(#a4a98a, 0.8);
 }
 
 /* --- INPUTS & SEARCH --- */
 entry {
-    background-color: alpha(#c2c6c7, 0.05);
-    border: 1px solid alpha(#c2c6c7, 0.1);
+    background-color: alpha(#c7c7c2, 0.05);
+    border: 1px solid alpha(#c7c7c2, 0.1);
     border-radius: 6px;
     color: @fg_color;
     padding: 6px;
 }
 
 entry:focus {
-    border-color: #7998a9;
-    box-shadow: 0 0 0 1px #7998a9;
+    border-color: #a4a98a;
+    box-shadow: 0 0 0 1px #a4a98a;
 }

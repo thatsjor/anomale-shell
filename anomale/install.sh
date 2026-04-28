@@ -270,7 +270,7 @@ clear
 
 if [ -f "/usr/share/systemd/bootctl/splash-arch.bmp" ]; then
     sudo rm -f /usr/share/systemd/bootctl/splash-arch.bmp
-    sudo cp "$THE_STUFF/linux.bmp" /usr/share/systemd/bootctl/splash-arch.bmp
+    sudo cp "$THE_STUFF/splash-arch.bmp" /usr/share/systemd/bootctl/splash-arch.bmp
     sudo mkinitcpio -P
 fi
 
