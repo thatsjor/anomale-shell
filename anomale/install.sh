@@ -264,6 +264,13 @@ do
     esac
 done
 clear
+
+if [ -f "/usr/share/systemd/bootctl/splash-arch.bmp" ]; then
+    rm -f /usr/share/systemd/bootctl/splash-arch.bmp
+    sudo cp "$THE_STUFF/linux.bmp" /usr/share/systemd/bootctl/splash-arch.bmp
+    sudo mkinitcpio -P
+fi
+
 git config --global --unset http.version
 cat << "EOF"
 This is the end of the script. Please reboot your computer.
