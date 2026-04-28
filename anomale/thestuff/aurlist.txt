@@ -46,3 +46,4 @@ fzf
 nano
 wifitui
 bluetui
+notwaita-cursor-theme
