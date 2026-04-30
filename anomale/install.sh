@@ -147,7 +147,6 @@ done
 
 #set fish as system-wide shell and set local/bin path.
 chsh -s /usr/bin/fish
-fish -c "set -Ua fish_user_paths $HOME/.local/bin"
 
 #Required to build anomale
 rustup default stable
@@ -275,6 +274,14 @@ if [ -f "/usr/share/systemd/bootctl/splash-arch.bmp" ]; then
 fi
 
 git config --global --unset http.version
+
+fish << 'EOF'
+if not contains "$HOME/.local/bin" $fish_user_paths
+    set -Ua fish_user_paths $HOME/.local/bin
+end
+set -Ux TERMINAL foot
+EOF
+
 cat << "EOF"
 This is the end of the script. Please reboot your computer.
 EOF
