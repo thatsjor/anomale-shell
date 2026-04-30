@@ -147,7 +147,7 @@ done
 
 #set fish as system-wide shell and set local/bin path.
 chsh -s /usr/bin/fish
-fish -c "fish_add_path ~/.local/bin"
+fish -c "fish_add_path $HOME/.local/bin"
 
 #Required to build anomale
 rustup default stable
